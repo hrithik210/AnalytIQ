@@ -70,6 +70,7 @@ class Analyst:
 
 
     async def run_analysis(self , csv_path : str):
+        df = pd.read_csv(csv_path)
         
         ## running interpreter
         interpreter = DataInterpreter()
@@ -78,10 +79,11 @@ class Analyst:
         
         
         user_message = f"""
-        Analyze this dataset using the interpreter's insights.
+        Analyze this dataset: {df} using the interpreter's insights.
 
         INTERPRETER OUTPUT:
         {json.dumps(context, indent=2)}
+        
 
         Your task:
         1. Use 'suggested_analysis' to guide your work

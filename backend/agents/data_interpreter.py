@@ -148,12 +148,15 @@ class DataInterpreter:
         #agent response
         
         response = await self.agent.run(task=user_message)
+  
         json_match = re.search(r'\{[\s\S]*\}', response.messages[-1].content)
         
         if not json_match:
             raise ValueError("failed to parse json")
         
-        return json.loads(json_match.group()) and print(json.loads(json_match.group()))
+        result = json.loads(json_match.group())
+        print(json.dumps(result, indent=2))
+        return result
     
     
 
