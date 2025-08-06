@@ -70,7 +70,6 @@ class Analyst:
 
 
     async def run_analysis(self , csv_path : str):
-        df = pd.read_csv(csv_path)
         
         ## running interpreter
         interpreter = DataInterpreter()
