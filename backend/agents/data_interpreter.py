@@ -5,7 +5,6 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
 import os
-
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API")
 
@@ -25,7 +24,7 @@ class DataInterpreter:
         self.model_client = OpenAIChatCompletionClient(
             model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY,
-        )
+        ) 
         
         self.system_message = """
             You are a world-class CSV schema analyst. Analyze the provided data and output STRICTLY in this JSON format:

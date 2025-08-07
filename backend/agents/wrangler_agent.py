@@ -13,7 +13,7 @@ class DataWranglerAgent():
         self.model_client = OpenAIChatCompletionClient(
             model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY,
-        ) 
+        )  
         
         self.system_message = """
 You are a senior data engineer responsible for preparing raw data for analysis. 

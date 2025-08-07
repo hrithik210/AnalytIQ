@@ -5,11 +5,13 @@ from typing import Dict , Any
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from data_interpreter import DataInterpreter
+from wrangler_agent import DataWranglerAgent
 import os
 from dotenv import load_dotenv
 import sys
 import asyncio
 
+load_dotenv()
 
 GEMINI_API_KEY= os.getenv("GEMINI_API")
 
@@ -19,9 +21,7 @@ class Analyst:
             model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY,
         ) 
-        
-        self.system_message = """
-        You are a senior data analyst. Your job is to:
+        self.system_message = """You are a senior data analyst. Your job is to:
         - Run descriptive statistics on numeric data
         - Identify trends, correlations, and patterns
         - Use the interpreter's schema and suggested analysis to guide your work
@@ -65,43 +65,86 @@ class Analyst:
         self.agent = AssistantAgent(
             name="Analyst",
             model_client=self.model_client,
-            system_message=self.system_message
+            system_message=self.system_message,
         )
 
 
     async def run_analysis(self , csv_path : str):
-        df = pd.read_csv(csv_path)
         
         ## running interpreter
         interpreter = DataInterpreter()
+        wrangler = DataWranglerAgent()
         
-        context = await interpreter.analyze(csv_path)
+        interpreter_ouput = await interpreter.analyze(csv_path)
+        wrangler_output = await wrangler.wrangle(csv_path)
         
+        print(f"csv path from wrangler : {wrangler_output['cleaned_csv_path']}")
+        
+        print(f"wrangling_report : {wrangler_output['wrangling_report']}")
         
         user_message = f"""
-        Analyze this dataset: {df} using the interpreter's insights.
+        Analyze this dataset: {wrangler_output['cleaned_csv_path']}.
 
         INTERPRETER OUTPUT:
-        {json.dumps(context, indent=2)}
+        {json.dumps(interpreter_ouput, indent=2)}
         
+        WRANGLER_OUTPUT:
+        {json.dumps(wrangler_output['wrangling_report'], indent=2)}
 
         Your task:
-        1. Use 'suggested_analysis' to guide your work
+        1. Use 'suggested_analysis' from interpreter to guide your work
         2. Run descriptive stats on numeric columns
         3. Analyze categorical trends (e.g., deal stages, lead sources)
         4. Identify any patterns or outliers
         5. Output in the required JSON format
+        
+        IMPORTANT: Always include the 'descriptive_stats' field even if empty. Ensure your response is ONLY valid JSON.
         """
         
         ##llm response
         response = await self.agent.run(task = user_message)
         
-        json_match = re.search(r'\{[\s\S]*\}', response.messages[-1].content)
+        # Extract JSON from response
+        response_content = response.messages[-1].content.strip()
+        json_match = re.search(r'\{[\s\S]*\}', response_content)
         
         if not json_match:
-            raise ValueError("failed to parse json")
+            raise ValueError("Failed to parse JSON from response")
         
-        return json.loads(json_match.group())
+        json_str = json_match.group()
+        
+        try:
+            # Try to parse the JSON
+            result_json = json.loads(json_str)
+            
+            # Validate required keys exist
+            required_keys = ["descriptive_stats", "trends", "correlations", "outliers", "data_summary"]
+            missing_keys = [key for key in required_keys if key not in result_json]
+            
+            if missing_keys:
+                # Only critique if there are actual validation issues
+                critique_msg = f"""
+                The JSON is missing required keys: {missing_keys}. 
+                Please fix the JSON to include all required fields: {required_keys}
+                
+                Current JSON:
+                {json_str}
+                
+                Return ONLY the corrected JSON.
+                """
+                
+                fixed_response = await self.agent.run(task=critique_msg)
+                fixed_json_match = re.search(r'\{[\s\S]*\}', fixed_response.messages[-1].content)
+                
+                if not fixed_json_match:
+                    raise ValueError("Failed to parse corrected JSON")
+                
+                result_json = json.loads(fixed_json_match.group())
+            
+            return result_json
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {e}")
     
 
 
@@ -122,4 +165,3 @@ if __name__ == "__main__":
             print(f"Error: {e}")
 
     asyncio.run(main())
-        
