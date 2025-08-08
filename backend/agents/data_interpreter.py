@@ -5,7 +5,18 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
 import os
+from pydantic import BaseModel, Field, ValidationError
+from typing import List, Dict
 load_dotenv()
+
+
+class DataInterpreterOutput(BaseModel):
+    schema_summary: str = Field(..., description="Concise 2-sentence overview of the dataset")
+    key_questions: List[str] = Field(..., description="Questions for clarification")
+    data_types: Dict[str, str] = Field(..., description="Column name to type mapping")
+    missing_values: Dict[str, int] = Field(..., description="NaN counts per column")
+    suggested_analysis: List[str] = Field(..., description="Analysis types like trend_analysis, outlier_detection")
+
 GEMINI_API_KEY = os.getenv("GEMINI_API")
 
 
@@ -26,22 +37,32 @@ class DataInterpreter:
             api_key=GEMINI_API_KEY,
         ) 
         
-        self.system_message = """
-            You are a world-class CSV schema analyst. Analyze the provided data and output STRICTLY in this JSON format:
-            {
-                "schema_summary": "Concise 2-sentence overview of the dataset",
-                "key_questions": ["Question 1 for clarification", "Question 2"],
-                "data_types": {"column1": "int", "column2": "str", ...},
-                "missing_values": {"column1": 5, "column2": 0, ...},
-                "suggested_analysis": ["trend_analysis", "outlier_detection", ...]
-            }
+        self.schema_json = DataInterpreterOutput.model_json_schema()
+        field_descriptions = "\n".join(
+            f"- {name}: {field.description}" 
+            for name, field in DataInterpreterOutput.model_fields.items()
+        )
+        
+        self.system_message = f"""
+            You are a world-class CSV schema analyst.
+
+            You must output **only** JSON that matches the schema below.
+
+            FIELD REQUIREMENTS:
+            {field_descriptions}
+
+            JSON SCHEMA:
+            {json.dumps(self.schema_json, indent=2)}
 
             Rules:
-            1. NEVER add extra fields or explanations
-            2. For missing_values, count NaN/empty values per column
-            3. Suggest 2-3 analysis types based on data patterns
-            4. If timestamp column exists, add "time_series" to suggested_analysis
-            5. Output ONLY valid JSON
+            1. Output only JSON.
+            2. All fields are required and types must match exactly.
+            3. Never add commentary.
+            4. NEVER add extra fields or explanations
+            5. For missing_values, count NaN/empty values per column
+            6. Suggest 2-3 analysis types based on data patterns
+            7. If timestamp column exists, add "time_series" to suggested_analysis
+            8. Output ONLY valid JSON
         """
         
         self.agent = AssistantAgent(
@@ -50,7 +71,7 @@ class DataInterpreter:
             system_message=self.system_message
         )
     
-    async def analyze(self , csv_path : str):
+    async def analyze(self , csv_path : str) -> DataInterpreterOutput:
         df = pd.read_csv(csv_path)
         
         context =  {
@@ -147,15 +168,37 @@ class DataInterpreter:
         #agent response
         
         response = await self.agent.run(task=user_message)
+        
   
-        json_match = re.search(r'\{[\s\S]*\}', response.messages[-1].content)
+        response_text = response.messages[-1].content.strip()
         
-        if not json_match:
-            raise ValueError("failed to parse json")
+        # # Write response to a text file
+        # with open('agent_response.txt', 'w') as f:
+        #     f.write(response_text)
         
-        result = json.loads(json_match.group())
-        print(json.dumps(result, indent=2))
-        return result
+
+        # Extract JSON from markdown code blocks if present
+        json_match = re.search(r'```json\s*\n(.*?)\n```', response_text, re.DOTALL)
+        if json_match:
+            json_content = json_match.group(1)
+        else:
+            # Try to find JSON without markdown wrapper
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_content = json_match.group(0)
+            else:
+                json_content = response_text
+
+        try:
+            parsed = DataInterpreterOutput.model_validate_json(json_content)
+            
+            print(json.dumps(parsed.model_dump(), indent=2))
+        except ValidationError as e:
+            raise ValueError(f"LLM output validation failed: {e}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format in response: {e}")
+
+        return parsed
     
     
 
@@ -172,7 +215,7 @@ if __name__ == "__main__":
         interpreter = DataInterpreter()
         try:
             result = await interpreter.analyze(csv_path)
-            print(json.dumps(result, indent=2))
+            print(json.dumps(result.model_dump(), indent=2))
         except Exception as e:
             print(f"Error: {e}")
 

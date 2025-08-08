@@ -5,8 +5,60 @@ import os
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from data_interpreter import DataInterpreter
+from pydantic import BaseModel, Field, ValidationError
+from typing import List, Dict
 
 GEMINI_API_KEY= os.getenv("GEMINI_API")
+
+
+class AuditLogEntry(BaseModel):
+    step: int
+    action: str
+    details: str
+
+class SchemaValidation(BaseModel):
+    status: str
+    missing_columns: List[str]
+    type_mismatches: Dict[str, str]
+
+class MissingData(BaseModel):
+    summary: Dict[str, Dict[str, str | int]]
+    total_rows_dropped: int
+
+class DataTypes(BaseModel):
+    converted: Dict[str, str]
+    invalid_values_handled: Dict[str, List[str]]
+
+class Outliers(BaseModel):
+    detected: Dict[str, Dict[str, float]]
+    treatment: str
+
+class Deduplication(BaseModel):
+    exact_duplicates_removed: int
+    partial_duplicates_checked: List[str]
+    rows_after_cleaning: int
+
+class CategoricalEncoding(BaseModel):
+    columns_encoded: List[str]
+    values_normalized: Dict[str, str | List[str]]
+
+class FinalDatasetMetrics(BaseModel):
+    original_shape: List[int]
+    final_shape: List[int]
+    total_transformations: int
+
+class DataWranglerOutput(BaseModel):
+    audit_log: List[AuditLogEntry]
+    schema_validation: SchemaValidation
+    missing_data: MissingData
+    data_types: DataTypes
+    outliers: Outliers
+    deduplication: Deduplication
+    categorical_encoding: CategoricalEncoding
+    final_dataset_metrics: FinalDatasetMetrics
+    generated_code: str
+
+
 
 class DataWranglerAgent():
     def __init__(self):
@@ -15,60 +67,35 @@ class DataWranglerAgent():
             api_key=GEMINI_API_KEY,
         )  
         
-        self.system_message = """
-You are a senior data engineer responsible for preparing raw data for analysis. 
-Your job is to perform comprehensive data wrangling with full auditability.
+        schema_json = json.dumps(DataWranglerOutput.model_json_schema(), indent=2)
 
-OUTPUT STRICTLY IN THIS JSON FORMAT:
-{
-    "audit_log": [
-        {"step": 1, "action": "Schema validation", "details": "All required columns present"},
-        {"step": 2, "action": "Missing data handling", "details": "Filled 'age' with median (15 values)"}
-    ],
-    "schema_validation": {
-        "status": "valid",
-        "missing_columns": [],
-        "type_mismatches": {"revenue": "expected: float, found: str"}
-    },
-    "missing_data": {
-        "summary": {"column_a": {"missing_count": 5, "strategy": "filled with median"}},
-        "total_rows_dropped": 0
-    },
-    "data_types": {
-        "converted": {"date": "datetime", "revenue": "float"},
-        "invalid_values_handled": {"revenue": ["$1,000" → 1000]}
-    },
-    "outliers": {
-        "detected": {"revenue": {"count": 3, "percentage": 1.5}},
-        "treatment": "flagged, not removed"
-    },
-    "deduplication": {
-        "exact_duplicates_removed": 2,
-        "partial_duplicates_checked": ["email"],
-        "rows_after_cleaning": 98
-    },
-    "categorical_encoding": {
-        "columns_encoded": [],
-        "values_normalized": {"status": ["Active", "active", "ACTIVE"] → "active"}
-    },
-    "final_dataset_metrics": {
-        "original_shape": [100, 14],
-        "final_shape": [98, 14],
-        "total_transformations": 6
-    },
-    "generated_code": "import pandas as pd\\ndef clean_data(df):\\n    df = df.copy()\\n    # Convert date\\n    df['date'] = pd.to_datetime(df['date'], errors='coerce')\\n    return df"
-}
+        
+        self.system_message = f"""
+        You are a senior data engineer responsible for preparing raw data for analysis.
+        Your job is to perform comprehensive data wrangling with full auditability.
 
-RULES:
-1. NEVER make irreversible changes (e.g., dropping rows) without logging
-2. For missing  suggest strategy but default to 'flag only' if ambiguous
-3. Convert strings to numeric/datetime where possible
-4. Normalize categorical values to lowercase
-5. Detect outliers using IQR (Q1 - 1.5*IQR, Q3 + 1.5*IQR)
-6. Drop exact duplicates only
-7. Output ONLY valid JSON
-8. Include every transformation in audit_log
-"""
+        You must output a JSON object that conforms exactly to the following JSON schema:
+        {schema_json}
+
+        Rules:
+        1. NEVER make irreversible changes without logging
+        2. For missing values, suggest strategy but default to 'flag only' if ambiguous
+        3. Convert strings to numeric/datetime where possible
+        4. Normalize categorical values to lowercase
+        5. Detect outliers using IQR
+        6. Drop exact duplicates only
+        7. Output ONLY valid JSON (no markdown, no commentary)
+        8. Include every transformation in audit_log
+        9. The generated_code MUST be a Python function named 'clean_data' that takes a DataFrame as input and returns the cleaned DataFrame
+        10. Example generated_code format:
+        ```
+        def clean_data(df):
+            # Your data cleaning code here
+            # Apply transformations to df
+            return df
+        ```
+        """
+        
         self.agent = AssistantAgent(
             name="DataWrangler",
             model_client=self.model_client,
@@ -76,7 +103,7 @@ RULES:
         )
         
     
-    async def wrangle(self , csv_path : str):
+    async def wrangle(self , csv_path : str) -> Dict:
         
         df = pd.read_csv(csv_path)
         original_shape = df.shape
@@ -104,7 +131,7 @@ RULES:
         {json.dumps(dataset_summary, indent=2, default=str)}
 
         CONTEXT FROM DATA INTERPRETER:
-        {json.dumps(context, indent=2)}
+        {json.dumps(context.model_dump(), indent=2)}
 
         TASKS:
         1. SCHEMA VALIDATION: Verify columns and types
@@ -120,23 +147,43 @@ RULES:
         
         #agent response
         response = await self.agent.run(task=user_message)
-        json_match = re.search(r'\{[\s\S]*\}', response.messages[-1].content)
         
-        if not json_match:
-            raise ValueError("failed to parse json")
+        response_text = response.messages[-1].content.strip()
         
-        result = json.loads(json_match.group())
-        print("Data wrangler output")
-        print(json.dumps(result, indent=2))
+        # # Write response to a text file
+        # with open('agent_response.txt', 'w') as f:
+        #     f.write(response_text)
+        
+        # Extract JSON from markdown code blocks if present
+        json_match = re.search(r'```json\s*\n(.*?)\n```', response_text, re.DOTALL)
+        if json_match:
+            json_content = json_match.group(1)
+        else:
+            # Try to find JSON without markdown wrapper
+            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if json_match:
+                json_content = json_match.group(0)
+            else:
+                json_content = response_text
+
+        try:
+            result = DataWranglerOutput.model_validate_json(json_content)
+    
+        except ValidationError as e:
+            raise ValueError(f"LLM output validation failed: {e}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format in response: {e}")
+
+
         
         try:
             # Print the generated code for debugging
             print("Generated code to execute:")
-            print(result['generated_code'])
+            print(result.generated_code)
             print("-" * 50)
             
             local_scope = {'pd': pd}  # Make pandas available in the local scope
-            exec(result['generated_code'], globals(), local_scope)
+            exec(result.generated_code, globals(), local_scope)
             clean_data = local_scope.get('clean_data')
             if clean_data:
                 print(f"Original DataFrame shape: {df.shape}")
@@ -160,17 +207,18 @@ RULES:
         df_cleaned.to_csv(cleaned_path_csv , index=False)
         
         # Update the final dataset metrics with actual values
-        result["final_dataset_metrics"] = {
+        result_dict = result.model_dump()
+        result_dict["final_dataset_metrics"] = {
             "original_shape": list(original_shape),
             "final_shape": list(df_cleaned.shape),
-            "total_transformations": len(result["audit_log"]),
+            "total_transformations": len(result.audit_log),
             "rows_removed": original_shape[0] - df_cleaned.shape[0],
-            "actual_duplicates_removed": original_shape[0] - df_cleaned.shape[0] if 'deduplication' in str(result["audit_log"]) else 0
+            "actual_duplicates_removed": original_shape[0] - df_cleaned.shape[0] if 'deduplication' in str(result.audit_log) else 0
         }
         
         return {
             "cleaned_csv_path": cleaned_path_csv,
-            "wrangling_report": result,
+            "wrangling_report": result_dict,
             "cleaned_sample": df_cleaned.head(3).to_dict(),
             "original_shape": original_shape,
             "final_shape": df_cleaned.shape
@@ -188,7 +236,7 @@ if __name__ == "__main__":
         wrangler = DataWranglerAgent()
         try:
             result = await wrangler.wrangle(csv_path)
-            print(json.dumps(result, indent=2))
+            print(f"final results of wrangler :",json.dumps(result, indent=2))
         except Exception as e:
             print(f"Error: {e}")
 

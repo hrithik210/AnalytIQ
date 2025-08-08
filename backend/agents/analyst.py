@@ -104,47 +104,12 @@ class Analyst:
         ##llm response
         response = await self.agent.run(task = user_message)
         
-        # Extract JSON from response
-        response_content = response.messages[-1].content.strip()
-        json_match = re.search(r'\{[\s\S]*\}', response_content)
+        json_match = re.search(r'\{[\s\S]*\}', response.messages[-1].content)
         
         if not json_match:
-            raise ValueError("Failed to parse JSON from response")
+            raise ValueError("failed to parse json")
         
-        json_str = json_match.group()
-        
-        try:
-            # Try to parse the JSON
-            result_json = json.loads(json_str)
-            
-            # Validate required keys exist
-            required_keys = ["descriptive_stats", "trends", "correlations", "outliers", "data_summary"]
-            missing_keys = [key for key in required_keys if key not in result_json]
-            
-            if missing_keys:
-                # Only critique if there are actual validation issues
-                critique_msg = f"""
-                The JSON is missing required keys: {missing_keys}. 
-                Please fix the JSON to include all required fields: {required_keys}
-                
-                Current JSON:
-                {json_str}
-                
-                Return ONLY the corrected JSON.
-                """
-                
-                fixed_response = await self.agent.run(task=critique_msg)
-                fixed_json_match = re.search(r'\{[\s\S]*\}', fixed_response.messages[-1].content)
-                
-                if not fixed_json_match:
-                    raise ValueError("Failed to parse corrected JSON")
-                
-                result_json = json.loads(fixed_json_match.group())
-            
-            return result_json
-            
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON format: {e}")
+        return json.loads(json_match.group())
     
 
 
