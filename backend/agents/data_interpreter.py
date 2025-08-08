@@ -141,28 +141,28 @@ class DataInterpreter:
     }
         
         user_message = f"""
-    Analyze this comprehensive CSV dataset structure:
-    
-    DATASET OVERVIEW:
-    {json.dumps(context['dataset_info'], indent=2)}
-    
-    COLUMN ANALYSIS:
-    {json.dumps(context['columns'], indent=2)}
-    
-    DATA QUALITY ASSESSMENT:
-    {json.dumps(context['data_quality'], indent=2)}
-    
-    DATA TYPES & STRUCTURE:
-    {json.dumps(context['data_types'], indent=2)}
-    
-    DATA PATTERNS DETECTED:
-    {json.dumps(context['data_patterns'], indent=2)}
-    
-    SAMPLE DATA:
-    {json.dumps(context['sample_data'], indent=2)}
-    
-    Based on this comprehensive analysis, provide your expert assessment in the required JSON format.
-    Consider the data quality, patterns, potential use cases, and recommended analysis approaches.
+        Analyze this comprehensive CSV dataset structure:
+        
+        DATASET OVERVIEW:
+        {json.dumps(context['dataset_info'], indent=2)}
+        
+        COLUMN ANALYSIS:
+        {json.dumps(context['columns'], indent=2)}
+        
+        DATA QUALITY ASSESSMENT:
+        {json.dumps(context['data_quality'], indent=2)}
+        
+        DATA TYPES & STRUCTURE:
+        {json.dumps(context['data_types'], indent=2)}
+        
+        DATA PATTERNS DETECTED:
+        {json.dumps(context['data_patterns'], indent=2)}
+        
+        SAMPLE DATA:
+        {json.dumps(context['sample_data'], indent=2)}
+        
+        Based on this comprehensive analysis, provide your expert assessment in the required JSON format.
+        Consider the data quality, patterns, potential use cases, and recommended analysis approaches.
     """
         
         #agent response
