@@ -1,7 +1,6 @@
 import pandas as pd
 import re
 import json
-from typing import Dict , Any, Union
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from data_interpreter import DataInterpreter
@@ -11,7 +10,7 @@ from dotenv import load_dotenv
 import sys
 import asyncio
 from pydantic import BaseModel, Field, ValidationError
-from typing import List, Dict
+from typing import List, Dict, Union
 
 
 load_dotenv()
@@ -36,6 +35,7 @@ class Outlier(BaseModel):
 
 
 class AnalystOutput(BaseModel):
+    cleaned_csv_path: str = Field(..., description="Path to the cleaned CSV file used for the analysis")
     descriptive_stats: Dict[str, NumericStats] = Field(..., description="Dictionary mapping column names to their descriptive statistics for numeric columns")
     trends: List[str] = Field(..., description="List of identified trends, patterns, and insights from the data analysis")
     correlation: List[tuple[str, str, float]] = Field(..., description="List of correlations between columns as tuples of (column1, column2, correlation_coefficient)")
@@ -58,6 +58,8 @@ class Analyst:
 
         You must output a JSON object that conforms exactly to this schema:
         {self.schema_json}
+        
+        IMPORTANT: The 'cleaned_csv_path' field should contain the path to the cleaned CSV file that was provided to you.
 
         Rules:
         1. Focus on **numeric columns** for descriptive statistics and correlations.
@@ -93,8 +95,10 @@ class Analyst:
         interpreter_dict = interpreter_res.model_dump()
 
         
+        cleaned_csv_path = wrangler_res['cleaned_csv_path']
+        
         user_message = f"""
-        Analyze this dataset: {wrangler_res['cleaned_csv_path']}.
+        Analyze this dataset: {cleaned_csv_path}.
 
         INTERPRETER OUTPUT:
         {json.dumps(interpreter_dict, indent=2)}
@@ -107,9 +111,10 @@ class Analyst:
         2. Run descriptive stats on numeric columns
         3. Analyze categorical trends (e.g., deal stages, lead sources)
         4. Identify any patterns or outliers
-        5. Output in the required JSON format
+        5. Include the cleaned CSV path: {cleaned_csv_path} in the 'cleaned_csv_path' field
+        6. Output in the required JSON format
         
-        IMPORTANT: Always include the 'descriptive_stats' field even if empty. Ensure your response is ONLY valid JSON.
+        IMPORTANT: Always include the 'descriptive_stats' field even if empty. Make sure to include the cleaned_csv_path. Ensure your response is ONLY valid JSON.
         """
         
         ##llm response
@@ -130,8 +135,19 @@ class Analyst:
                 json_content = response_text
     
         try:
+            # Try to parse the JSON content
+            try:
+                parsed_json = json.loads(json_content)
+                # Ensure cleaned_csv_path is in the response
+                if 'cleaned_csv_path' not in parsed_json:
+                    parsed_json['cleaned_csv_path'] = cleaned_csv_path
+                # Convert back to JSON string for validation
+                json_content = json.dumps(parsed_json)
+            except json.JSONDecodeError:
+                # If we can't parse as JSON, we'll just continue with validation
+                pass
+                
             parsed = AnalystOutput.model_validate_json(json_content)
-
             print(f"Analyst output : {json.dumps(parsed.model_dump(), indent=2)}")
         except ValidationError as e:
             raise ValueError(f"LLM output validation failed: {e}")
