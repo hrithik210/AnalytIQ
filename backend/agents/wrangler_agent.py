@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import json
 import re
 import os
@@ -182,7 +183,7 @@ class DataWranglerAgent():
             print(result.generated_code)
             print("-" * 50)
             
-            local_scope = {'pd': pd}  # Make pandas available in the local scope
+            local_scope = {'pd': pd, 'np': np}  # Make pandas available in the local scope
             exec(result.generated_code, globals(), local_scope)
             clean_data = local_scope.get('clean_data')
             if clean_data:
@@ -216,10 +217,15 @@ class DataWranglerAgent():
             "actual_duplicates_removed": original_shape[0] - df_cleaned.shape[0] if 'deduplication' in str(result.audit_log) else 0
         }
         
+        # Convert DataFrame with potential Timestamp objects to JSON-serializable format
+        cleaned_sample = df_cleaned.head(3).copy()
+        for col in cleaned_sample.select_dtypes(include=['datetime64']).columns:
+            cleaned_sample[col] = cleaned_sample[col].astype(str)
+            
         return {
             "cleaned_csv_path": cleaned_path_csv,
             "wrangling_report": result_dict,
-            "cleaned_sample": df_cleaned.head(3).to_dict(),
+            "cleaned_sample": cleaned_sample.to_dict(),
             "original_shape": original_shape,
             "final_shape": df_cleaned.shape
         }
@@ -234,9 +240,16 @@ if __name__ == "__main__":
 
         csv_path = sys.argv[1]
         wrangler = DataWranglerAgent()
+        def json_serialize(obj):
+            if isinstance(obj, (pd.Timestamp, pd.DatetimeIndex)):
+                return obj.strftime('%Y-%m-%d %H:%M:%S')
+            if isinstance(obj, np.int64):
+                return int(obj)
+            raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+                
         try:
             result = await wrangler.wrangle(csv_path)
-            print(f"final results of wrangler :",json.dumps(result, indent=2))
+            print(f"final results of wrangler :", json.dumps(result, indent=2, default=json_serialize))
         except Exception as e:
             print(f"Error: {e}")
 

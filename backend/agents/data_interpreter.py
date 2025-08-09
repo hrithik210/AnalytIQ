@@ -13,8 +13,16 @@ load_dotenv()
 class DataInterpreterOutput(BaseModel):
     schema_summary: str = Field(..., description="Concise 2-sentence overview of the dataset")
     key_questions: List[str] = Field(..., description="Questions for clarification")
-    data_types: Dict[str, str] = Field(..., description="Column name to type mapping")
-    missing_values: Dict[str, int] = Field(..., description="NaN counts per column")
+    data_types: Dict[str, str] = Field(
+        ..., 
+        description="Column name to type mapping",
+        json_schema_extra={"additionalProperties": {"type": "string"}}
+    )
+    missing_values: Dict[str, int] = Field(
+        ..., 
+        description="NaN counts per column",
+        json_schema_extra={"additionalProperties": {"type": "integer"}}
+    )
     suggested_analysis: List[str] = Field(..., description="Analysis types like trend_analysis, outlier_detection")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API")
@@ -22,12 +30,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API")
 
 import asyncio
 
-# async def main():
-#     response = await model_client.create([UserMessage(content="how does autogen work?", source="user")])
-#     print(response)
-#     await model_client.close()
-
-# asyncio.run(main())
 
 
 class DataInterpreter:
@@ -35,6 +37,7 @@ class DataInterpreter:
         self.model_client = OpenAIChatCompletionClient(
             model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY,
+            # We're not using structured output directly, so no json_output parameter
         ) 
         
         self.schema_json = DataInterpreterOutput.model_json_schema()
