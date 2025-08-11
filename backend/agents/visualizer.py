@@ -74,18 +74,7 @@ class Visualizer:
             system_message=self.system_message
         )
         
-    async def create_visualization(self, csv_path: str):
-            
-            analyst = Analyst()
-            
-            # Get the analyst results
-            analyst_res = await analyst.run_analysis(csv_path)
-            
-            # Access the cleaned_csv_path directly from the Pydantic model
-            cleaned_csv_path = analyst_res.cleaned_csv_path
-            
-            # Convert to dict for later use in context
-            analyst_output = analyst_res.model_dump()
+    async def create_visualization(self, cleaned_csv_path: str ,analyst_output ):
             
             # Read the CSV file
             df = pd.read_csv(cleaned_csv_path)

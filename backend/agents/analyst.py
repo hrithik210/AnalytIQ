@@ -81,38 +81,25 @@ class Analyst:
         )
 
 
-    async def run_analysis(self , csv_path : str):
+    async def run_analysis(self , cleaned_csv_path : str , interpreter_dict : Dict[str , any] , wrangling_report : Dict[str , any]) -> AnalystOutput:
         
-        ## running interpreter
-        interpreter = DataInterpreter()
-        wrangler = DataWranglerAgent()
-        
-        interpreter_res = await interpreter.analyze(csv_path)
-        wrangler_res = await wrangler.wrangle(csv_path)
-        
-
-        
-        interpreter_dict = interpreter_res.model_dump()
-
-        
-        cleaned_csv_path = wrangler_res['cleaned_csv_path']
+        df = pd.read_csv(cleaned_csv_path)
         
         user_message = f"""
-        Analyze this dataset: {cleaned_csv_path}.
+        Analyze this dataset: {df}.
 
         INTERPRETER OUTPUT:
         {json.dumps(interpreter_dict, indent=2)}
         
         WRANGLER_OUTPUT:
-        {json.dumps(wrangler_res['wrangling_report'], indent=2)}
+        {json.dumps(wrangling_report, indent=2)}
 
         Your task:
         1. Use 'suggested_analysis' from interpreter to guide your work
         2. Run descriptive stats on numeric columns
         3. Analyze categorical trends (e.g., deal stages, lead sources)
         4. Identify any patterns or outliers
-        5. Include the cleaned CSV path: {cleaned_csv_path} in the 'cleaned_csv_path' field
-        6. Output in the required JSON format
+        5. Output in the required JSON format
         
         IMPORTANT: Always include the 'descriptive_stats' field even if empty. Make sure to include the cleaned_csv_path. Ensure your response is ONLY valid JSON.
         """
