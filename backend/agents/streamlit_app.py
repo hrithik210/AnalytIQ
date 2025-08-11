@@ -12,11 +12,8 @@ from pathlib import Path
 
 # The agents are in the current directory, so we don't need to add anything to the path
 
-# Import your agents
-from data_interpreter import DataInterpreter
-from wrangler_agent import DataWranglerAgent
-from analyst import Analyst
-from visualizer import Visualizer
+# Import the orchestrator
+from orchestrator import start as orchestrator_start
 
 # Configure Streamlit page
 st.set_page_config(
@@ -80,20 +77,22 @@ def main():
     
     # Sidebar
     with st.sidebar:
-        st.markdown("## 🚀 Analysis Pipeline")
+        st.markdown("## 🚀 Orchestrated Analysis Pipeline")
         st.markdown("""
-        **Our AI Agents:**
+        **Our AI Agent Pipeline:**
         1. 🔍 **Data Interpreter** - Schema analysis
         2. 🧹 **Data Wrangler** - Data cleaning
         3. 📈 **Analyst** - Statistical insights
         4. 📊 **Visualizer** - Chart generation
+        
+        *All agents work together through an orchestrated pipeline*
         """)
         
         st.markdown("---")
         st.markdown("### 📋 Requirements")
         st.markdown("""
         - CSV file upload
-        - Automated processing
+        - Automated orchestrated processing
         - Downloadable cleaned data
         - Interactive visualizations
         """)
@@ -137,7 +136,7 @@ def main():
             st.info("👆 Please upload a CSV file to begin analysis")
 
 def process_data(uploaded_file):
-    """Process the uploaded CSV file through the agentic pipeline"""
+    """Process the uploaded CSV file through the agentic pipeline using orchestrator"""
     
     # Create a temporary file
     try:
@@ -164,77 +163,31 @@ def process_data(uploaded_file):
         if 'analysis_results' not in st.session_state:
             st.session_state.analysis_results = {}
         
-        # Step 1: Data Interpretation
-        status_text.text("🔍 Step 1/4: Interpreting data schema...")
-        progress_bar.progress(25)
-        
-        with st.expander("🔍 Data Interpreter Results", expanded=False):
-            interpreter_results = run_async_agent(DataInterpreter(), 'analyze', tmp_file_path)
-            if interpreter_results:
-                st.json(interpreter_results.model_dump())
-                st.session_state.analysis_results['interpreter'] = interpreter_results
-            else:
-                st.error("❌ Data interpretation failed")
-                return
-        
-        # Step 2: Data Wrangling
-        status_text.text("🧹 Step 2/4: Cleaning and processing data...")
+        # Run the orchestrator pipeline
+        status_text.text("🚀 Running AI Analysis Pipeline...")
         progress_bar.progress(50)
         
-        with st.expander("🧹 Data Wrangler Results", expanded=False):
-            wrangler_results = run_async_agent(DataWranglerAgent(), 'wrangle', tmp_file_path)
-            if wrangler_results:
-                st.json(wrangler_results)
-                st.session_state.analysis_results['wrangler'] = wrangler_results
-                
-                # Show cleaning summary
-                st.markdown("### 📋 Cleaning Summary")
-                original_shape = wrangler_results.get('original_shape', [0, 0])
-                final_shape = wrangler_results.get('final_shape', [0, 0])
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Original Rows", original_shape[0])
-                with col2:
-                    st.metric("Final Rows", final_shape[0], delta=final_shape[0] - original_shape[0])
-                with col3:
-                    st.metric("Columns", final_shape[1])
-            else:
-                st.error("❌ Data wrangling failed")
-                return
+        # Execute the orchestrator
+        results = run_orchestrator(tmp_file_path)
         
-        # Step 3: Analysis
-        status_text.text("📈 Step 3/4: Performing statistical analysis...")
-        progress_bar.progress(75)
+        if not results:
+            st.error("❌ Orchestrator pipeline failed")
+            return
         
-        with st.expander("📈 Analyst Results", expanded=True):
-            analyst_results = run_async_agent(Analyst(), 'run_analysis', tmp_file_path)
-            if analyst_results:
-                st.session_state.analysis_results['analyst'] = analyst_results
-                display_analyst_results(analyst_results)
-            else:
-                st.error("❌ Analysis failed")
-                return
-        
-        # Step 4: Visualization
-        status_text.text("📊 Step 4/4: Generating visualizations...")
         progress_bar.progress(100)
+        status_text.text("✅ Analysis complete!")
         
-        with st.expander("📊 Visualizer Results", expanded=True):
-            visualizer_results = run_async_agent(Visualizer(), 'create_visualization', tmp_file_path)
-            if visualizer_results:
-                st.session_state.analysis_results['visualizer'] = visualizer_results
-                display_visualizations(visualizer_results, wrangler_results['cleaned_csv_path'])
-            else:
-                st.error("❌ Visualization generation failed")
-                return
+        # Store results in session state
+        st.session_state.analysis_results = results
+        
+        # Display results from each agent
+        display_orchestrator_results(results)
         
         # Final success message
-        status_text.text("✅ Analysis complete!")
         st.success("🎉 All agents have completed their analysis successfully!")
         
         # Download section
-        display_download_section(wrangler_results)
+        display_download_section(results['wrangler_output'])
         
     except Exception as e:
         st.error(f"❌ Error during processing: {str(e)}")
@@ -244,18 +197,63 @@ def process_data(uploaded_file):
         if os.path.exists(tmp_file_path):
             os.unlink(tmp_file_path)
 
-def run_async_agent(agent, method_name, *args):
-    """Run an async agent method"""
+def run_orchestrator(csv_path):
+    """Run the orchestrator pipeline"""
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        method = getattr(agent, method_name)
-        result = loop.run_until_complete(method(*args))
+        result = loop.run_until_complete(orchestrator_start(csv_path))
         loop.close()
         return result
     except Exception as e:
-        st.error(f"Error running {agent.__class__.__name__}: {str(e)}")
+        st.error(f"Error running orchestrator: {str(e)}")
         return None
+
+def display_orchestrator_results(results):
+    """Display results from the orchestrator pipeline"""
+    if not results:
+        st.error("No results available to display")
+        return
+    
+    # Display Data Interpreter Results
+    with st.expander("🔍 Data Interpreter Results", expanded=False):
+        if 'interpreter_output' in results:
+            interpreter_output = results['interpreter_output']
+            if hasattr(interpreter_output, 'model_dump'):
+                st.json(interpreter_output.model_dump())
+            else:
+                st.json(interpreter_output)
+    
+    # Display Data Wrangler Results
+    with st.expander("🧹 Data Wrangler Results", expanded=False):
+        if 'wrangler_output' in results:
+            wrangler_output = results['wrangler_output']
+            st.json(wrangler_output)
+            
+            # Show cleaning summary
+            st.markdown("### 📋 Cleaning Summary")
+            original_shape = wrangler_output.get('original_shape', [0, 0])
+            final_shape = wrangler_output.get('final_shape', [0, 0])
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Original Rows", original_shape[0])
+            with col2:
+                st.metric("Final Rows", final_shape[0], delta=final_shape[0] - original_shape[0])
+            with col3:
+                st.metric("Columns", final_shape[1])
+    
+    # Display Analyst Results
+    with st.expander("📈 Analyst Results", expanded=True):
+        if 'analyst_output' in results:
+            display_analyst_results(results['analyst_output'])
+    
+    # Display Visualizer Results
+    with st.expander("📊 Visualizer Results", expanded=True):
+        if 'visualizer_output' in results and 'wrangler_output' in results:
+            cleaned_csv_path = results['wrangler_output'].get('cleaned_csv_path')
+            if cleaned_csv_path:
+                display_visualizations(results['visualizer_output'], cleaned_csv_path)
 
 def display_analyst_results(analyst_results):
     """Display analyst results in a formatted way"""
