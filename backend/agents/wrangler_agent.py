@@ -58,6 +58,10 @@ class DataWranglerOutput(BaseModel):
     categorical_encoding: CategoricalEncoding
     final_dataset_metrics: FinalDatasetMetrics
     generated_code: str
+    strict : bool = Field(
+        True,
+        description="If True, the agent will strictly follow the schema and rules without deviations."
+    )
 
 
 
@@ -66,6 +70,7 @@ class DataWranglerAgent():
         self.model_client = OpenAIChatCompletionClient(
             model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY,
+        
         )  
         
         schema_json = json.dumps(DataWranglerOutput.model_json_schema(), indent=2)
@@ -100,7 +105,8 @@ class DataWranglerAgent():
         self.agent = AssistantAgent(
             name="DataWrangler",
             model_client=self.model_client,
-            system_message=self.system_message
+            system_message=self.system_message,
+
         )
         
     
