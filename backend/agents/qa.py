@@ -105,8 +105,6 @@ class QAAgent:
                 
         try:
             parsed = QAOutput.model_validate_json(json_content)
-            
-            print(json.dumps(parsed.model_dump(), indent=2))
         except ValidationError as e:
             raise ValueError(f"LLM output validation failed: {e}")
         except json.JSONDecodeError as e:
