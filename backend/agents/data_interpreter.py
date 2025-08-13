@@ -24,6 +24,10 @@ class DataInterpreterOutput(BaseModel):
         json_schema_extra={"additionalProperties": {"type": "integer"}}
     )
     suggested_analysis: List[str] = Field(..., description="Analysis types like trend_analysis, outlier_detection")
+    strict : bool = Field(
+        True,
+        description="If True, the agent will strictly follow the schema and rules without deviations."
+    )
 
 GEMINI_API_KEY = os.getenv("GEMINI_API")
 

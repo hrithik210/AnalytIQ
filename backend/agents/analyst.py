@@ -39,6 +39,10 @@ class AnalystOutput(BaseModel):
     correlation: List[tuple[str, str, float]] = Field(..., description="List of correlations between columns as tuples of (column1, column2, correlation_coefficient)")
     outliers: List[Outlier] = Field(..., description="List of outliers detected in numeric columns with their details")
     data_summary: str = Field(..., description="Comprehensive summary of key insights, patterns, and findings from the dataset analysis")
+    strict : bool = Field(
+        True,
+        description="If True, the agent will strictly follow the schema and rules without deviations."
+    )
 
 class Analyst:
     def __init__(self):

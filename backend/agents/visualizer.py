@@ -34,6 +34,10 @@ class VisualizationOutput(BaseModel):
         ..., 
         description="List of Python code snippets using Plotly to generate the recommended charts"
     )
+    strict : bool = Field(
+        True,
+        description="If True, the agent will strictly follow the schema and rules without deviations."
+    )
     
     
 class Visualizer:
