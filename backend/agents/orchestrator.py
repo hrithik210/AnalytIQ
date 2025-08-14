@@ -3,6 +3,7 @@ from wrangler_agent import DataWranglerAgent
 from visualizer import Visualizer
 from analyst import Analyst
 from qa import QAAgent
+from storyteller_agent import StoryTeller
 import pandas as pd
 import json
 
@@ -44,11 +45,25 @@ async def start(csv : str):
     
     qa_output = qa_response.model_dump()
     print("QA Report:", json.dumps(qa_output, indent=2))
+    
+    storyteller = StoryTeller()
+    storyteller_res =  await storyteller.createNarrative(
+        interpreter_output=interpreter_dict,
+        analyst_output=analyst_output,
+        visualizer_output=visualizer_res,
+        qa_report=qa_output
+    )
+    
+    storyteller_output = storyteller_res.model_dump()
+    print(f"storyteller_output : {storyteller_output}")
+    
     return {
         "interpreter_output": interpreter_output,
         "wrangler_output": wrangler_output,
         "analyst_output": analyst_output,
-        "visualizer_output": visualizer_res
+        "visualizer_output": visualizer_res,
+        "qa_output" : qa_output,
+        "storyteller_output" : storyteller_output
     }
 
 
