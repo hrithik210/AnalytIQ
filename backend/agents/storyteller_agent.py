@@ -114,7 +114,7 @@ class StoryTeller:
         
         print("✍️ Storyteller Agent: Crafting the narrative...")
         
-        response = self.agent.run(task=user_message)
+        response = await self.agent.run(task=user_message)
         
         response_text = response.messages[-1].content.strip()
         

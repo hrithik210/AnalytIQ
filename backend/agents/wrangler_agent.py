@@ -196,12 +196,6 @@ class DataWranglerAgent():
                 print(f"Original DataFrame shape: {df.shape}")
                 df_cleaned = clean_data(df)
                 print(f"Cleaned DataFrame shape: {df_cleaned.shape}")
-                
-                # Verify the changes actually happened
-                if df_cleaned.shape[0] != df.shape[0]:
-                    print(f"Successfully removed {df.shape[0] - df_cleaned.shape[0]} rows")
-                else:
-                    print("Warning: No rows were actually removed despite claims in audit log")
             else:
                 raise ValueError("clean_data function not found in generated code")
         except Exception as e:
