@@ -158,8 +158,8 @@ class DataWranglerAgent():
         response_text = response.messages[-1].content.strip()
         
         # Write response to a text file
-        with open('agent_response.txt', 'w') as f:
-            f.write(response_text)
+        # with open('agent_response.txt', 'w') as f:
+        #     f.write(response_text)
         
         # Extract JSON from markdown code blocks if present
         json_match = re.search(r'```json\s*\n(.*?)\n```', response_text, re.DOTALL)
