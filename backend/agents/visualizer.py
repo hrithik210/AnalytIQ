@@ -69,6 +69,10 @@ class Visualizer:
             *   The code should create the figure (e.g., `fig = px.bar(...)`) but does not need to call `fig.show()`.
             *   Handle potential issues like outliers if relevant (e.g., filtering before plotting).
             *   Code should be syntactically correct and executable.
+            *   When using value_counts().reset_index(), the reset_index() creates columns with the original column name and 'count'. Use the actual column names, not 'index'.
+            *   For value_counts operations, use .reset_index(name='Count') and reference the original column name directly.
+            *   CRITICAL: Test your column references! When you do df['column'].value_counts().reset_index(name='Count'), the resulting DataFrame has columns [original_column_name, 'Count']. Use the original column name, NOT 'index'.
+            *   Example: department_counts = df['Department'].value_counts().reset_index(name='Count') creates columns ['Department', 'Count'], so use x='Department', not x='index'.
         5.  Ensure the final output is ONLY the valid JSON object matching the schema. Do not include any markdown code block wrappers (like ```json) or extra text.
         """
         
