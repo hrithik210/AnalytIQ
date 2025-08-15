@@ -84,6 +84,7 @@ def main():
         2. 🧹 **Data Wrangler** - Data cleaning
         3. 📈 **Analyst** - Statistical insights
         4. 📊 **Visualizer** - Chart generation
+        5. 🎨 **Chart Renderer** - JSON-based visualization
         
         *All agents work together through an orchestrated pipeline*
         """)
@@ -94,7 +95,7 @@ def main():
         - CSV file upload
         - Automated orchestrated processing
         - Downloadable cleaned data
-        - Interactive visualizations
+        - Pre-generated JSON chart visualizations
         """)
 
     # Main content area
@@ -239,10 +240,8 @@ def display_orchestrator_results(results):
     
     # Display and Execute Visualizer Results
     st.markdown('<h2 class="section-header">📊 Data Visualizations</h2>', unsafe_allow_html=True)
-    if 'visualizer_output' in results and 'wrangler_output' in results:
-        cleaned_csv_path = results['wrangler_output'].get('cleaned_csv_path')
-        if cleaned_csv_path:
-            display_visualizations(results['visualizer_output'], cleaned_csv_path)
+    if 'chart_data' in results and results['chart_data']:
+        display_chart_visualizations(results['chart_data'], results.get('visualizer_output', {}))
     else:
         st.info("No visualizations available")
 
@@ -280,63 +279,47 @@ def display_analyst_results(analyst_results):
         for outlier in results['outliers']:
             st.warning(f"**{outlier['column']}**: {outlier['count']} outliers detected")
 
-def display_visualizations(visualizer_results, cleaned_csv_path):
-    """Display generated visualizations"""
-    if visualizer_results is None:
-        st.error("No visualization results available to display")
-        return
-        
-    if isinstance(visualizer_results, dict):
-        results = visualizer_results
-    else:
-        results = visualizer_results.model_dump()
-    
-    # Load the cleaned data
-    try:
-        df = pd.read_csv(cleaned_csv_path)
-    except Exception as e:
-        st.error(f"Could not load cleaned data: {str(e)}")
+def display_chart_visualizations(chart_data, visualizer_results):
+    """Display visualizations from JSON chart data"""
+    if not chart_data:
+        st.error("No chart data available to display")
         return
     
     st.markdown("### 📊 Generated Visualizations")
     
-    # Display chart recommendations
-    if 'chart_recommendations' in results:
-        for i, rec in enumerate(results['chart_recommendations']):
-            st.markdown(f"#### Chart {i+1}: {rec['title']}")
-            st.markdown(f"**Type**: {rec['chart_type']}")
-            st.markdown(f"**Reason**: {rec['reason']}")
-            st.markdown(f"**Columns**: {', '.join(rec['data_columns'])}")
+    # Display chart recommendations if available
+    if visualizer_results and 'chart_recommendations' in visualizer_results:
+        for i, rec in enumerate(visualizer_results['chart_recommendations']):
+            if i < len(chart_data):  # Only show recommendations for available charts
+                st.markdown(f"#### Chart {i+1}: {rec['title']}")
+                st.markdown(f"**Type**: {rec['chart_type']}")
+                st.markdown(f"**Reason**: {rec['reason']}")
+                st.markdown(f"**Columns**: {', '.join(rec['data_columns'])}")
     
-    # Execute and display the plotly code
-    if 'plotly_code_snippets' in results:
-        for i, code in enumerate(results['plotly_code_snippets']):
-            try:
+    # Display each chart from JSON data
+    for i, chart_json in enumerate(chart_data):
+        try:
+            if 'error' in chart_json:
+                st.error(f"❌ Chart {i+1} failed to generate: {chart_json['error']}")
+                if 'failed_code' in chart_json:
+                    with st.expander(f"📝 View Failed Code for Chart {i+1}"):
+                        st.code(chart_json['failed_code'], language='python')
+                continue
+            
+            # Create plotly figure from JSON
+            fig = go.Figure(chart_json)
+            
+            # Display the chart
+            if not visualizer_results or 'chart_recommendations' not in visualizer_results or i >= len(visualizer_results['chart_recommendations']):
                 st.markdown(f"#### Visualization {i+1}")
-                
-                # Create a safe execution environment
-                exec_globals = {
-                    'px': px,
-                    'go': go,
-                    'df': df,
-                    'pd': pd
-                }
-                
-                # Execute the code
-                exec(code, exec_globals)
-                
-                # Get the figure (assuming it's stored in 'fig')
-                if 'fig' in exec_globals:
-                    st.plotly_chart(exec_globals['fig'], use_container_width=True)
-                
-                # Show the code in a collapsible section
-                if st.button(f"📝 View Code for Chart {i+1}", key=f"view_code_{i}"):
-                    st.code(code, language='python')
-                    
-            except Exception as e:
-                st.error(f"Error executing visualization code {i+1}: {str(e)}")
-                if st.button(f"📝 View Failed Code for Chart {i+1}", key=f"failed_code_{i}"):
-                    st.code(code, language='python')
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+        except Exception as e:
+            st.error(f"❌ Error displaying chart {i+1}: {str(e)}")
+            # Show raw JSON data for debugging if needed
+            with st.expander(f"🔍 Debug Chart {i+1} JSON Data"):
+                st.json(chart_json)
 
 def display_download_section(wrangler_results):
     """Display download options for cleaned data"""
