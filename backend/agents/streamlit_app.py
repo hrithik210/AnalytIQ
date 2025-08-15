@@ -215,45 +215,36 @@ def display_orchestrator_results(results):
         st.error("No results available to display")
         return
     
-    # Display Data Interpreter Results
-    with st.expander("🔍 Data Interpreter Results", expanded=False):
-        if 'interpreter_output' in results:
-            interpreter_output = results['interpreter_output']
-            if hasattr(interpreter_output, 'model_dump'):
-                st.json(interpreter_output.model_dump())
+    # Display Story Teller Results
+    st.markdown('<h2 class="section-header">📖 Data Story</h2>', unsafe_allow_html=True)
+    if 'storyteller_output' in results:
+        storyteller_output = results['storyteller_output']
+        
+        # Display the narrative in a nice format
+        if isinstance(storyteller_output, dict):
+            if 'narrative' in storyteller_output:
+                st.markdown(storyteller_output['narrative'])
+            elif 'story' in storyteller_output:
+                st.markdown(storyteller_output['story'])
             else:
-                st.json(interpreter_output)
+                # If structure is different, display the whole output
+                for key, value in storyteller_output.items():
+                    if isinstance(value, str) and len(value) > 50:  # Likely narrative text
+                        st.markdown(f"**{key.title()}:**")
+                        st.markdown(value)
+        else:
+            st.markdown(str(storyteller_output))
+    else:
+        st.info("No story narrative available")
     
-    # Display Data Wrangler Results
-    with st.expander("🧹 Data Wrangler Results", expanded=False):
-        if 'wrangler_output' in results:
-            wrangler_output = results['wrangler_output']
-            st.json(wrangler_output)
-            
-            # Show cleaning summary
-            st.markdown("### 📋 Cleaning Summary")
-            original_shape = wrangler_output.get('original_shape', [0, 0])
-            final_shape = wrangler_output.get('final_shape', [0, 0])
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Original Rows", original_shape[0])
-            with col2:
-                st.metric("Final Rows", final_shape[0], delta=final_shape[0] - original_shape[0])
-            with col3:
-                st.metric("Columns", final_shape[1])
-    
-    # Display Analyst Results
-    with st.expander("📈 Analyst Results", expanded=True):
-        if 'analyst_output' in results:
-            display_analyst_results(results['analyst_output'])
-    
-    # Display Visualizer Results
-    with st.expander("📊 Visualizer Results", expanded=True):
-        if 'visualizer_output' in results and 'wrangler_output' in results:
-            cleaned_csv_path = results['wrangler_output'].get('cleaned_csv_path')
-            if cleaned_csv_path:
-                display_visualizations(results['visualizer_output'], cleaned_csv_path)
+    # Display and Execute Visualizer Results
+    st.markdown('<h2 class="section-header">📊 Data Visualizations</h2>', unsafe_allow_html=True)
+    if 'visualizer_output' in results and 'wrangler_output' in results:
+        cleaned_csv_path = results['wrangler_output'].get('cleaned_csv_path')
+        if cleaned_csv_path:
+            display_visualizations(results['visualizer_output'], cleaned_csv_path)
+    else:
+        st.info("No visualizations available")
 
 def display_analyst_results(analyst_results):
     """Display analyst results in a formatted way"""
