@@ -68,6 +68,10 @@ class VectorMemory:
         wrangling_text = f"""
         Cleaned CSV Path: {wrangler_output.get('cleaned_csv_path', '')}
         Wrangling Report: {wrangler_output.get('wrangling_report', '')}
+        cleaned Sample: {wrangler_output.get('cleaned_sample', {})}
+        Original Shape: {wrangler_output.get('original_shape', [])}
+        Final Shape: {wrangler_output.get('final_shape', [])}
+        
         """
 
         self.wrangling_collection.add(
