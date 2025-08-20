@@ -7,7 +7,6 @@ from storyteller_agent import StoryTeller
 import pandas as pd
 import json
 import traceback
-from services.vector_memory import vector_memory
 import uuid
 
 # Generate for CLI/testing
