@@ -12,7 +12,7 @@ app = FastAPI(title="Automated Data Analyst API - Phase 1")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For development only. Restrict this in production.
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],  # Load from .env file
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
