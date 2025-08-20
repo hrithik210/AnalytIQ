@@ -1,41 +1,77 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, BarChart3 } from "lucide-react";
+import Plot from 'react-plotly.js';
 
 interface ChartData {
-  data?: any;
+  data?: any[];
   layout?: any;
   config?: any;
   error?: string;
+  title?: string;
+  chart_type?: string;
 }
 
 interface VisualizationsSectionProps {
   chartData: ChartData[];
 }
 
-// Placeholder chart component for demo purposes
+// Real Plotly chart component
 const PlotlyChartWrapper: React.FC<{ chartData: ChartData; index: number }> = ({ 
   chartData, 
   index 
 }) => {
+  // Default layout for better styling
+  const defaultLayout = {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    font: {
+      color: 'hsl(var(--foreground))',
+      family: 'Inter, sans-serif'
+    },
+    margin: { t: 40, r: 20, b: 40, l: 40 },
+    ...chartData.layout
+  };
+
+  // Default config for responsiveness
+  const defaultConfig = {
+    responsive: true,
+    displayModeBar: false,
+    ...chartData.config
+  };
+
+  const chartTitle = chartData.title || chartData.layout?.title?.text || `Visualization ${index + 1}`;
+
   return (
     <Card className="border-0 bg-gradient-card shadow-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5" />
-          Visualization {index + 1}
+          {chartTitle}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-96 bg-muted/30 rounded-lg flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="text-muted-foreground">Chart placeholder</p>
-            <p className="text-xs text-muted-foreground">
-              Plotly chart will render here when connected to backend
-            </p>
+        {chartData.data && chartData.data.length > 0 ? (
+          <div className="w-full">
+            <Plot
+              data={chartData.data}
+              layout={defaultLayout}
+              config={defaultConfig}
+              style={{ width: '100%', height: '400px' }}
+              useResizeHandler={true}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="h-96 bg-muted/30 rounded-lg flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground" />
+              <p className="text-muted-foreground">No chart data available</p>
+              <p className="text-xs text-muted-foreground">
+                Chart data is empty or invalid
+              </p>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

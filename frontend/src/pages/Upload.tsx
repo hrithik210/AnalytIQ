@@ -6,6 +6,7 @@ import { ArrowLeft, Upload as UploadIcon } from "lucide-react";
 import FileUploader from "@/components/upload/FileUploader";
 import ProcessingIndicator from "@/components/upload/ProcessingIndicator";
 import { useToast } from "@/hooks/use-toast";
+import { apiService, type UploadResponse } from "@/services/api";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -30,57 +31,67 @@ const Upload = () => {
     }
 
     setIsProcessing(true);
+    setCurrentStep("Uploading file and initializing AI agents...");
+    setProgress(10);
     
-    // Simulate the analysis process with progress updates
-    const steps = [
-      { message: "Uploading file and initializing agents...", duration: 2000, progress: 20 },
-      { message: "Schema Expert analyzing data structure...", duration: 3000, progress: 40 },
-      { message: "Data Cleaner processing quality issues...", duration: 2500, progress: 60 },
-      { message: "Stats Guru generating insights...", duration: 3500, progress: 80 },
-      { message: "Chart Wizard creating visualizations...", duration: 2000, progress: 90 },
-      { message: "Storyteller crafting narrative...", duration: 1500, progress: 100 }
-    ];
+    try {
+      // Start the actual API call
+      const analysisPromise = apiService.uploadAndAnalyze(selectedFile);
+      
+      // Simulate progress updates while analysis is running
+      const progressSteps = [
+        { message: "Schema Expert analyzing data structure...", progress: 25 },
+        { message: "Data Cleaner processing quality issues...", progress: 45 },
+        { message: "Stats Guru generating insights...", progress: 65 },
+        { message: "Chart Wizard creating visualizations...", progress: 80 },
+        { message: "Storyteller crafting narrative...", progress: 95 }
+      ];
 
-    for (const step of steps) {
-      setCurrentStep(step.message);
-      setProgress(step.progress);
-      await new Promise(resolve => setTimeout(resolve, step.duration));
-    }
-
-    // Simulate navigation to report page
-    toast({
-      title: "Analysis Complete!",
-      description: "Your data has been successfully analyzed.",
-    });
-    
-    // Navigate to report page with mock data
-    navigate("/report", { 
-      state: { 
-        reportData: {
-          report_id: "mock-uuid-123",
-          storyteller_output: {
-            executive_summary: "This dataset contains sales data with 1,247 records across 8 columns. The analysis reveals strong seasonal trends and significant growth opportunities in the Q4 period.",
-            key_findings: [
-              "Sales peak during Q4 with 45% higher revenue than Q1",
-              "Product Category A shows 23% year-over-year growth",
-              "Regional performance varies significantly, with East region outperforming by 18%",
-              "Customer retention rate improved by 12% compared to previous period"
-            ],
-            data_overview: "The dataset contains comprehensive sales information including transaction dates, product categories, regional data, customer segments, and revenue figures. Data quality is high with minimal missing values.",
-            analysis_narrative: "Our analysis reveals several key patterns in your sales data. The seasonal trend shows a clear preference for purchases during the holiday season, with November and December accounting for nearly 40% of annual sales.\n\nThe geographic distribution shows the East region significantly outperforming other regions, suggesting successful regional strategies that could be replicated elsewhere.\n\nCustomer segmentation analysis indicates that premium customers contribute disproportionately to revenue, representing 20% of customers but 60% of total revenue.",
-            visualizations_summary: "Generated 4 key visualizations: quarterly sales trends, regional performance comparison, product category analysis, and customer segment distribution. Charts highlight seasonal patterns and growth opportunities.",
-            qa_considerations: "Note: Some records had missing customer segment data (3.2% of total). These were handled using statistical imputation methods.",
-            conclusion: "The data shows a healthy business with strong seasonal performance and clear growth opportunities in underperforming regions. Recommend focusing on Q4 strategies and expanding successful East region tactics to other territories."
-          },
-          chart_data: [
-            { data: [], layout: {}, config: {} },
-            { data: [], layout: {}, config: {} },
-            { error: "Insufficient data for correlation analysis" },
-            { data: [], layout: {}, config: {} }
-          ]
+      // Update progress every 3 seconds
+      const progressInterval = setInterval(() => {
+        const currentIndex = Math.floor((progress - 10) / 20);
+        if (currentIndex < progressSteps.length) {
+          const step = progressSteps[currentIndex];
+          setCurrentStep(step.message);
+          setProgress(step.progress);
         }
-      }
-    });
+      }, 3000);
+
+      // Wait for the actual analysis to complete
+      const result: UploadResponse = await analysisPromise;
+      
+      // Clear progress interval
+      clearInterval(progressInterval);
+      
+      // Final progress update
+      setCurrentStep("Analysis complete!");
+      setProgress(100);
+
+      // Show success toast
+      toast({
+        title: "Analysis Complete!",
+        description: "Your data has been successfully analyzed.",
+      });
+      
+      // Navigate to report page with actual data
+      navigate("/report", { 
+        state: { 
+          reportData: result
+        }
+      });
+      
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      setIsProcessing(false);
+      setProgress(0);
+      setCurrentStep("");
+      
+      toast({
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "An unexpected error occurred during analysis.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
