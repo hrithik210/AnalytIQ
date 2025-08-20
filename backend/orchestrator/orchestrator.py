@@ -1,15 +1,14 @@
-from data_interpreter import DataInterpreter
-from wrangler_agent import DataWranglerAgent
-from visualizer import Visualizer
-from analyst import Analyst
-from qa import QAAgent
-from storyteller_agent import StoryTeller
+from agents.data_interpreter import DataInterpreter
+from agents.wrangler_agent import DataWranglerAgent
+from agents.visualizer import Visualizer
+from agents.analyst import Analyst
+from agents.qa import QAAgent
+from agents.storyteller_agent import StoryTeller
 import pandas as pd
 import json
 import traceback
 import uuid
 
-# Generate for CLI/testing
 
 async def start(csv : str ):
     report_id = f"cli-{uuid.uuid4()}" # Generate for CLI/testing
