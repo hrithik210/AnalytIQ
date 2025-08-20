@@ -5,6 +5,9 @@ import os
 import uuid
 from typing import Dict,Any
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from backend.orchestrator.runner import start
 
@@ -12,7 +15,9 @@ app = FastAPI(title="Automated Data Analyst API - Phase 1")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:3000")],  # Load from .env file
+    allow_origins=[
+        os.getenv("FRONTEND_URL", "")  # Additional URL from environment
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
