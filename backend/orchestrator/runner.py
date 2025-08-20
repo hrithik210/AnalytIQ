@@ -1,9 +1,9 @@
-from agents.data_interpreter import DataInterpreter
-from agents.wrangler_agent import DataWranglerAgent
-from agents.visualizer import Visualizer
-from agents.analyst import Analyst
-from agents.qa import QAAgent
-from agents.storyteller_agent import StoryTeller
+from ..agents.data_interpreter import DataInterpreter
+from ..agents.wrangler_agent import DataWranglerAgent
+from ..agents.visualizer import Visualizer
+from ..agents.analyst import Analyst
+from ..agents.qa import QAAgent
+from ..agents.storyteller_agent import StoryTeller
 import pandas as pd
 import json
 import traceback
@@ -21,7 +21,7 @@ async def start(csv : str ):
     
     #wrangler 
     wrangler = DataWranglerAgent()
-    wrangler_output = await wrangler.wrangle(csv)
+    wrangler_output = await wrangler.wrangle(csv, interpreter_dict)
     print("wrangler_output:", wrangler_output)
     cleaned_csv_path = wrangler_output['cleaned_csv_path']
         

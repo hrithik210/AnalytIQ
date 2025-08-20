@@ -5,9 +5,9 @@ import re
 import os
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from data_interpreter import DataInterpreter
+from ..agents.data_interpreter import DataInterpreter
 from pydantic import BaseModel, Field, ValidationError
-from typing import List, Dict
+from typing import List, Dict, Any
 
 GEMINI_API_KEY= os.getenv("GEMINI_API")
 
@@ -110,16 +110,11 @@ class DataWranglerAgent():
         )
         
     
-    async def wrangle(self , csv_path : str) -> Dict:
+    async def wrangle(self , csv_path : str, interpreter_dict : Dict[str, Any]) -> Dict:
         
         df = pd.read_csv(csv_path)
         original_shape = df.shape
         
-        interpreter = DataInterpreter()
-        
-        
-        #getting context from interpreter
-        context = await interpreter.analyze(csv_path)
         
         # Prepare dataset summary for the agent
         dataset_summary = {
@@ -138,7 +133,7 @@ class DataWranglerAgent():
         {json.dumps(dataset_summary, indent=2, default=str)}
 
         CONTEXT FROM DATA INTERPRETER:
-        {json.dumps(context.model_dump(), indent=2)}
+        {json.dumps(interpreter_dict, indent=2)}
 
         TASKS:
         1. SCHEMA VALIDATION: Verify columns and types

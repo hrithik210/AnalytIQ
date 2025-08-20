@@ -6,7 +6,7 @@ import uuid
 from typing import Dict,Any
 import json
 
-from orchestrator import start
+from backend.orchestrator.runner import start
 
 app = FastAPI(title="Automated Data Analyst API - Phase 1")
 
@@ -39,13 +39,13 @@ async def upload_and_analyze(file : UploadFile = File(...)):
     os.makedirs("uploads" , exist_ok=True)
     os.makedirs("reports" , exist_ok=True)
     
-    original_file_path = f"{report_id}_{file.filename}"
+    original_file_path = f"uploads/{report_id}_{file.filename}"
     
-    # print(f"[API] Saving uploaded file {file.filename}...")
-    # saveUploadedFile(file, original_file_path)
-    # print(f"[API] File saved to {original_file_path}")
+    print(f"[API] Saving uploaded file {file.filename}...")
+    saveUploadedFile(file, original_file_path)
+    print(f"[API] File saved to {original_file_path}")
     
-    # print(f"[API] Starting analysis for report {report_id}...")
+    print(f"[API] Starting analysis for report {report_id}...")
     
     try:
         result = await start(original_file_path)

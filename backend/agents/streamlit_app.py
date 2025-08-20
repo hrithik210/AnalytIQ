@@ -13,7 +13,7 @@ from pathlib import Path
 # The agents are in the current directory, so we don't need to add anything to the path
 
 # Import the orchestrator
-from backend.orchestrator.orchestrator import start as orchestrator_start
+from backend.orchestrator.runner import start as orchestrator_start
 
 # Configure Streamlit page
 st.set_page_config(
