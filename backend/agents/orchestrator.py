@@ -8,46 +8,46 @@ import pandas as pd
 import json
 import traceback
 from services.vector_memory import vector_memory
+import uuid
 
-report_id = 1
+# Generate for CLI/testing
 
-async def start(csv : str):
-    interpreter = DataInterpreter()
+async def start(csv : str ):
+    report_id = f"cli-{uuid.uuid4()}" # Generate for CLI/testing
     
+    #interpreter 
+    interpreter = DataInterpreter()
     interpreter_output = await interpreter.analyze(csv)
     interpreter_dict = interpreter_output.model_dump()
     
-    print("interpreter_output:", interpreter_output)
     
+    #wrangler 
     wrangler = DataWranglerAgent()
     wrangler_output = await wrangler.wrangle(csv)
     print("wrangler_output:", wrangler_output)
     cleaned_csv_path = wrangler_output['cleaned_csv_path']
-    
+        
     
     df = pd.read_csv(cleaned_csv_path)
     
     
     df_sample = df.head(5).to_dict()
     
+
+    
+    #analyst
     analyst = Analyst()
     analyst_res = await analyst.run_analysis(cleaned_csv_path , interpreter_dict, wrangler_output['wrangling_report'])
     
     analyst_output = analyst_res.model_dump()
     print("analyst_output:", analyst_output)
+
+    
+    #visualizer
     visualizer = Visualizer()
     visualization_output = await visualizer.create_visualization(cleaned_csv_path , analyst_output)
     
     visualizer_res =  visualization_output.model_dump()
-    
-    try:
-        vector_memory.store_interpreter(report_id, interpreter_dict)
-        vector_memory.store_wrangling(report_id, wrangler_output)
-        vector_memory.store_analyst(report_id, analyst_output)
-        vector_memory.store_visualization(report_id, visualizer_res)
-        report_id += 1
-    except Exception as e:
-        print(f"Error storing data in vector memory: {e}")
     
     plotly_code_snippets = visualizer_res.get("plotly_code_snippets")
     

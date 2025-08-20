@@ -57,13 +57,13 @@ class VectorMemory:
 
         self.schema_collection.add(
             documents=[schema_text],
-            metadatas=[schema_text],
+            metadatas=[interpreter_dict],
             ids=[report_id],
         )
         
         print(f"[VectorMemory] Schema for report {report_id} stored.")
     
-    def store_wrangling(self, report_id: str, wrangler_output: Dict[str, Any]) -> None:
+    def store_wrangler(self, report_id: str, wrangler_output: Dict[str, Any]) -> None:
         
         wrangling_text = f"""
         Cleaned CSV Path: {wrangler_output.get('cleaned_csv_path', '')}
@@ -134,5 +134,17 @@ class VectorMemory:
             print(f"[VectorMemory] Error retrieving data: {e}")
             return [] 
 
+
+def retrieve_interpreter_context(self, query: str, n_results: int = 3) -> List[Dict[str, Any]]:
+    return self.retrieve_relevant_data(query, "schema_collection", n_results)
+
+def retrieve_wrangler_context(self, query: str, n_results: int = 3) -> List[Dict[str, Any]]:
+    return self.retrieve_relevant_data(query, "wrangling_collection", n_results)
+
+def retrieve_analyst_context(self, query: str, n_results: int = 3) -> List[Dict[str, Any]]:
+    return self.retrieve_relevant_data(query, "analyst_collection", n_results)
+
+def retrieve_visualizer_context(self, query: str, n_results: int = 3) -> List[Dict[str, Any]]:
+    return self.retrieve_relevant_data(query, "visualization_collection", n_results)
 
 vector_memory = VectorMemory()
