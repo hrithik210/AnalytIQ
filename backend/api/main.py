@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.orchestrator.runner import start
+from pydantic import BaseModel
+from backend.integrations.supabase_client import get_supabase_client
 
 app = FastAPI(title="Automated Data Analyst API - Phase 1")
 
@@ -76,3 +78,47 @@ async def upload_and_analyze(file : UploadFile = File(...)):
 async def health_check():
     """Simple health check endpoint."""
     return {"status": "ok", "service": "Automated Data Analyst Backend - Phase 1"}
+
+
+class AnalyzeSupabaseRequest(BaseModel):
+    bucket: str
+    path: str
+
+
+@app.post("/api/v1/analyze-supabase")
+async def analyze_supabase_csv(req: AnalyzeSupabaseRequest):
+    """Analyze a CSV file stored in Supabase Storage.
+
+    Body params:
+      - bucket: storage bucket name
+      - path: path to the CSV inside the bucket
+    """
+    sb = get_supabase_client()
+    # Download the file as bytes
+    res = sb.storage.from_(req.bucket).download(req.path)
+    if res is None:
+        raise HTTPException(status_code=404, detail="File not found in Supabase")
+
+    # Persist temporarily to local disk for the current pipeline
+    report_id = str(uuid.uuid4())
+    os.makedirs("uploads", exist_ok=True)
+    original_file_path = f"uploads/{report_id}_{os.path.basename(req.path)}"
+    with open(original_file_path, "wb") as f:
+        f.write(res)
+
+    try:
+        result = await start(original_file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+    finally:
+        try:
+            os.remove(original_file_path)
+        except Exception:
+            pass
+
+    frontend_focused_report = {
+        "report_id": report_id,
+        "storyteller_output": result.get("storyteller_output", {}),
+        "chart_data": result.get("chart_data", []),
+    }
+    return frontend_focused_report
