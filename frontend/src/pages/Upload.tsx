@@ -7,6 +7,7 @@ import FileUploader from "@/components/upload/FileUploader";
 import ProcessingIndicator from "@/components/upload/ProcessingIndicator";
 import { useToast } from "@/hooks/use-toast";
 import { apiService, type UploadResponse } from "@/services/api";
+import { supabase } from "@/services/supabase";
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -35,8 +36,24 @@ const Upload = () => {
     setProgress(10);
     
     try {
-      // Start the actual API call
-      const analysisPromise = apiService.uploadAndAnalyze(selectedFile);
+      // Upload to Supabase Storage first to reduce backend I/O
+      setCurrentStep("Uploading file to storage...");
+      const bucket = import.meta.env.VITE_SUPABASE_BUCKET as string;
+      const ext = selectedFile.name.split('.').pop()?.toLowerCase();
+      if (ext !== 'csv') {
+        throw new Error('Only CSV files are allowed.');
+      }
+      const uniquePath = `${Date.now()}_${selectedFile.name}`;
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(uniquePath, selectedFile, {
+        contentType: 'text/csv',
+        upsert: false,
+      });
+      if (uploadError) {
+        throw new Error(`Upload to storage failed: ${uploadError.message}`);
+      }
+
+      // Start the actual API call pointing to Supabase path
+      const analysisPromise = apiService.analyzeSupabaseCSV(bucket, uniquePath);
       
       // Simulate progress updates while analysis is running
       const progressSteps = [

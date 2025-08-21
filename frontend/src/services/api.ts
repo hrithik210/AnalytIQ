@@ -55,6 +55,19 @@ class ApiService {
     return await response.json();
   }
 
+  async analyzeSupabaseCSV(bucket: string, path: string): Promise<UploadResponse> {
+    const response = await fetch(`${this.baseUrl}/api/v1/analyze-supabase`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bucket, path })
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Analyze failed with status ${response.status}`);
+    }
+    return await response.json();
+  }
+
   // Future endpoints can be added here
   async getReportById(reportId: string): Promise<AnalysisResult> {
     const response = await fetch(`${this.baseUrl}/api/v1/reports/${reportId}`);
