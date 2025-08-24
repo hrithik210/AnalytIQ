@@ -9,7 +9,10 @@ import sys
 import asyncio
 from pydantic import BaseModel, Field, ValidationError
 from typing import List, Dict, Union
-
+from langchain.text_splitter import CharacterTextSplitter, RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import FAISS
 
 load_dotenv()
 
@@ -60,8 +63,6 @@ class Analyst:
 
         You must output a JSON object that conforms exactly to this schema:
         {self.schema_json}
-        
-        IMPORTANT: The 'cleaned_csv_path' field should contain the path to the cleaned CSV file that was provided to you.
 
         Rules:
         1. Focus on **numeric columns** for descriptive statistics and correlations.
@@ -81,14 +82,63 @@ class Analyst:
             model_client=self.model_client,
             system_message=self.system_message,
         )
+        
+        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-
+    def create_chunks(self, df: pd.DataFrame, chunk_size=500, overlap=50):
+        """Create chunks from dataframe for vector store"""
+        df_str = df.head(100).to_string()
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=overlap,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        
+        texts = text_splitter.split_text(df_str)
+        
+        # Create documents with metadata
+        docs = [Document(page_content=text, metadata={"chunk_id": i}) for i, text in enumerate(texts)]
+        return docs
+    
+    def fetch_relevant_context(self, vector_store: FAISS, query: str, k: int = 3) -> str:
+        """Fetch relevant context from vector store based on query"""
+        try:
+            # Create retriever
+            retriever = vector_store.as_retriever(search_kwargs={"k": k})
+            
+            # Retrieve relevant documents
+            relevant_docs = retriever.get_relevant_documents(query)
+            
+            # Format the context
+            context = "\n\n".join([doc.page_content for doc in relevant_docs])
+            
+            return context
+        except Exception as e:
+            print(f"Error fetching context: {e}")
+            return ""
+        
     async def run_analysis(self , cleaned_csv_path : str , interpreter_dict : Dict[str , any] , wrangling_report : Dict[str , any]) -> AnalystOutput:
         
         df = pd.read_csv(cleaned_csv_path)
         
+        docs = self.create_chunks(df)
+        db = FAISS.from_documents(docs, self.embeddings)
+        print(f"📦 FAISS vector store created with {db.index.ntotal} chunks.")
+        
+        # Create analysis query based on interpreter suggestions
+        analysis_query = "descriptive statistics numeric columns trends patterns outliers correlations"
+        if 'suggested_analysis' in interpreter_dict:
+            analysis_query = f"{analysis_query} {interpreter_dict['suggested_analysis']}"
+        
+        # Fetch relevant context from vector store
+        relevant_context = self.fetch_relevant_context(db, analysis_query, k=5)
+        print(f"📄 Retrieved relevant context: {len(relevant_context)} characters")
+        
         user_message = f"""
-        Analyze this dataset: {df}.
+        Analyze this dataset based on the relevant context retrieved from the data.
+
+        RELEVANT DATA CONTEXT:
+        {relevant_context}
 
         INTERPRETER OUTPUT:
         {json.dumps(interpreter_dict, indent=2)}
@@ -98,9 +148,9 @@ class Analyst:
 
         Your task:
         1. Use 'suggested_analysis' from interpreter to guide your work
-        2. Run descriptive stats on numeric columns
-        3. Analyze categorical trends (e.g., deal stages, lead sources)
-        4. Identify any patterns or outliers
+        2. Run descriptive stats on numeric columns based on the retrieved context
+        3. Analyze categorical trends (e.g., deal stages, lead sources) from the context
+        4. Identify any patterns or outliers visible in the retrieved data segments
         5. Output in the required JSON format
         
         IMPORTANT: Always include the 'descriptive_stats' field even if empty. Make sure to include the cleaned_csv_path. Ensure your response is ONLY valid JSON.
