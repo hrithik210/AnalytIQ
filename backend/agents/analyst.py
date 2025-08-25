@@ -100,22 +100,17 @@ class Analyst:
         docs = [Document(page_content=text, metadata={"chunk_id": i}) for i, text in enumerate(texts)]
         return docs
     
-    def fetch_relevant_context(self, vector_store: FAISS, query: str, k: int = 3) -> str:
-        """Fetch relevant context from vector store based on query"""
+    def fetch_relevant_context(self,vector_store : FAISS , query:str , k:int=3):
         try:
-            # Create retriever
-            retriever = vector_store.as_retriever(search_kwargs={"k": k})
-            
-            # Retrieve relevant documents
+            retriever = vector_store.as_retriever(search_kwargs={"k" : k})
             relevant_docs = retriever.get_relevant_documents(query)
             
-            # Format the context
             context = "\n\n".join([doc.page_content for doc in relevant_docs])
-            
             return context
         except Exception as e:
-            print(f"Error fetching context: {e}")
+            print(f"error fetching context")
             return ""
+    
         
     async def run_analysis(self , cleaned_csv_path : str , interpreter_dict : Dict[str , any] , wrangling_report : Dict[str , any]) -> AnalystOutput:
         
@@ -126,9 +121,9 @@ class Analyst:
         print(f"📦 FAISS vector store created with {db.index.ntotal} chunks.")
         
         # Create analysis query based on interpreter suggestions
-        analysis_query = "descriptive statistics numeric columns trends patterns outliers correlations"
         if 'suggested_analysis' in interpreter_dict:
-            analysis_query = f"{analysis_query} {interpreter_dict['suggested_analysis']}"
+            analysis_query = f"{interpreter_dict['suggested_analysis']}"
+
         
         # Fetch relevant context from vector store
         relevant_context = self.fetch_relevant_context(db, analysis_query, k=5)
