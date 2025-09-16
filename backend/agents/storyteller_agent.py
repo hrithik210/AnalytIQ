@@ -93,7 +93,8 @@ class StoryTeller:
         interpreter_output : Dict[str, Any],
         analyst_output : Dict[str, Any],
         visualizer_output : Dict[str, Any],
-        qa_report : Dict[str, Any]
+        qa_report : Dict[str, Any],
+        retrieved_context: Optional[Dict[str, List[str]]] = None
     ) -> StorytellerOutput:
         
         context = {
@@ -102,12 +103,16 @@ class StoryTeller:
             "visualizer_output" : visualizer_output,
             "qa_report" : qa_report
         }
+        rag_text = "\n\n".join(sum((retrieved_context.values() if retrieved_context else []), [])) if retrieved_context else ""
         
         user_message = f"""
         Create a compelling narrative report based on the following data analysis outputs.
 
         ANALYSIS CONTEXT:
         {json.dumps(context, indent=2)}
+
+        RETRIEVED CONTEXT:
+        {rag_text}
 
         Please provide your comprehensive narrative report in the specified JSON format.
         """

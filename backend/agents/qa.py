@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from dotenv import load_dotenv
@@ -68,7 +68,8 @@ class QAAgent:
         wrangler_output : Dict[str, Any] , 
         analyst_output : Dict[str, Any],
         visualizer_output: Dict[str, Any],
-        cleaned_csv_sample: Dict[str, Any]):
+        cleaned_csv_sample: Dict[str, Any],
+        retrieved_context: Optional[Dict[str, List[str]]] = None):
         
         
         context = {
@@ -78,6 +79,7 @@ class QAAgent:
             "visualizer_output" : visualizer_output,
             "cleaned_data_sample" : cleaned_csv_sample 
         }
+        rag_text = "\n\n".join(sum((retrieved_context.values() if retrieved_context else []), [])) if retrieved_context else ""
         
         user_message = f"""
         Please perform a quality assurance review on the following data analysis pipeline outputs.
@@ -85,7 +87,8 @@ class QAAgent:
         CONTEXT FOR REVIEW:
         {json.dumps(context, indent=2, default=str)}
 
-        Please provide your detailed QA report in the specified JSON format.
+        RETRIEVED CONTEXT:
+        {rag_text}
         """
         
         print("🔍 QA Agent: Running review...")
