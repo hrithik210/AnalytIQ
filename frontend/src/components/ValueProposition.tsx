@@ -1,4 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { 
   Database, 
   Sparkles, 
@@ -104,7 +106,24 @@ const workflow = [
   }
 ];
 
+const credibilityPoints = [
+  {
+    title: "Built for operator speed",
+    description: "Move from raw CSV to decision-ready story in one uninterrupted run.",
+  },
+  {
+    title: "Designed for confidence",
+    description: "Every stage is structured so findings are explainable to technical and business teams.",
+  },
+  {
+    title: "Focused on outcomes",
+    description: "Insights are delivered in narrative form, not disconnected charts and fragments.",
+  },
+];
+
 const ValueProposition = () => {
+  const navigate = useNavigate();
+
   return (
     <section id="features" className="py-24 bg-muted/30">
       <div className="container px-4 md:px-6">
@@ -195,6 +214,39 @@ const ValueProposition = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        <div className="mt-20 grid gap-4 md:grid-cols-3">
+          {credibilityPoints.map((point) => (
+            <Card key={point.title} className="panel-soft border-border/70">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold">{point.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{point.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div id="launch" className="mt-16 rounded-3xl border border-primary/35 bg-primary/10 px-6 py-10 text-center md:px-10">
+          <p className="text-xs uppercase tracking-[0.2em] text-primary">Ready to Launch</p>
+          <h3 className="mx-auto mt-4 max-w-3xl text-balance text-3xl font-semibold leading-tight md:text-4xl">
+            Turn your next dataset into a clear decision brief.
+          </h3>
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
+            Start one run and let the agent fleet produce the structure, charts, and story.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Button
+              size="lg"
+              className="min-w-48 bg-gradient-primary text-primary-foreground shadow-glow"
+              onClick={() => navigate("/upload")}
+            >
+              Start Analysis
+            </Button>
+            <Button size="lg" variant="outline" asChild className="min-w-48 border-border/80 bg-card/70 hover:bg-card">
+              <a href="#workflow">Review Pipeline</a>
+            </Button>
+          </div>
         </div>
       </div>
     </section>
