@@ -31,6 +31,15 @@ const Upload = () => {
       return;
     }
 
+    if (!supabase) {
+      toast({
+        title: "Storage unavailable",
+        description: "Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     setCurrentStep("Uploading file and initializing AI agents...");
     setProgress(10);
