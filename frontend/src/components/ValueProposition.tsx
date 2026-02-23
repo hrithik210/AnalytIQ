@@ -18,39 +18,45 @@ import {
 const agents = [
   {
     name: "Schema Expert",
-    description: "Analyzes data structure and quality",
+    role: "Structural audit",
+    output: "Column map, type confidence, anomaly surface",
     icon: Database,
-    color: "text-blue-500"
+    color: "text-cyan-300"
   },
   {
     name: "Data Cleaner", 
-    description: "Identifies and handles data issues",
+    role: "Quality remediation",
+    output: "Missing values, duplicates, and outlier treatment",
     icon: Sparkles,
-    color: "text-purple-500"
+    color: "text-emerald-300"
   },
   {
     name: "Stats Guru",
-    description: "Performs statistical analysis",
+    role: "Statistical core",
+    output: "Distribution checks, trend extraction, signal ranking",
     icon: BarChart3,
-    color: "text-green-500"
+    color: "text-sky-300"
   },
   {
     name: "Chart Wizard",
-    description: "Creates insightful visualizations",
+    role: "Visualization engine",
+    output: "Plot-ready charts optimized for decision review",
     icon: FileSpreadsheet,
-    color: "text-orange-500"
+    color: "text-amber-300"
   },
   {
     name: "Quality Checker",
-    description: "Validates analysis integrity",
+    role: "Integrity guard",
+    output: "Cross-agent consistency and confidence controls",
     icon: ShieldCheck,
-    color: "text-red-500"
+    color: "text-rose-300"
   },
   {
     name: "Storyteller",
-    description: "Generates narrative insights",
+    role: "Narrative synthesis",
+    output: "Executive summary, findings, and recommended next moves",
     icon: MessageSquare,
-    color: "text-indigo-500"
+    color: "text-violet-300"
   }
 ];
 
@@ -156,32 +162,33 @@ const ValueProposition = () => {
         </div>
 
         {/* AI Agents Section */}
-        <div id="agents" className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Meet Your{" "}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">
-              AI Agent Team
-            </span>
+        <div id="agents" className="mb-12 text-center">
+          <p className="mb-3 text-xs uppercase tracking-[0.18em] text-primary">Agent Fleet</p>
+          <h2 className="text-balance text-3xl font-semibold leading-tight md:text-5xl">
+            Each specialist owns one job.
+            <span className="bg-gradient-primary bg-clip-text text-transparent"> Together, they own the outcome.</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Six specialized AI agents work together to deliver comprehensive data insights
+          <p className="mx-auto mt-4 max-w-3xl text-lg text-muted-foreground">
+            AnalytIQ orchestrates six focused agents so every report ships with structure, confidence, and narrative
+            clarity.
           </p>
         </div>
         
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {agents.map((agent, index) => (
-            <Card key={index} className="group hover:shadow-glow transition-all duration-300 border-0 bg-gradient-card">
+            <Card key={index} className="group panel-soft border-border/70 transition-all duration-300 hover:-translate-y-1 hover:shadow-glow">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-lg bg-background ${agent.color}`}>
-                    <agent.icon className="h-6 w-6" />
+                  <div className={`rounded-lg border border-border/80 bg-background/60 p-3 ${agent.color}`}>
+                    <agent.icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <p className="mb-1 text-xs uppercase tracking-[0.13em] text-muted-foreground">{agent.role}</p>
+                    <h3 className="mb-2 font-semibold text-foreground group-hover:text-primary transition-colors">
                       {agent.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {agent.description}
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {agent.output}
                     </p>
                   </div>
                 </div>
