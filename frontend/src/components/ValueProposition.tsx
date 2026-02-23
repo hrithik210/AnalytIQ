@@ -8,7 +8,11 @@ import {
   MessageSquare,
   Zap,
   Clock,
-  Target
+  Target,
+  UploadCloud,
+  Layers3,
+  LineChart,
+  FileText
 } from "lucide-react";
 
 const agents = [
@@ -71,10 +75,58 @@ const benefits = [
   }
 ];
 
+const workflow = [
+  {
+    title: "Upload once",
+    description: "Drop your CSV and trigger the full workflow in one click.",
+    icon: UploadCloud,
+  },
+  {
+    title: "Multi-agent execution",
+    description: "Specialists coordinate quality checks, analysis, and chart generation.",
+    icon: Layers3,
+  },
+  {
+    title: "Insight synthesis",
+    description: "Statistical outcomes and visuals are connected into one narrative.",
+    icon: LineChart,
+  },
+  {
+    title: "Executive-ready output",
+    description: "Receive a concise report built for action, not just observation.",
+    icon: FileText,
+  }
+];
+
 const ValueProposition = () => {
   return (
     <section id="features" className="py-24 bg-muted/30">
       <div className="container px-4 md:px-6">
+        <div id="workflow" className="mb-20">
+          <div className="mx-auto mb-10 max-w-3xl text-center">
+            <p className="mb-3 text-xs uppercase tracking-[0.18em] text-primary">How It Works</p>
+            <h2 className="text-balance text-3xl font-semibold leading-tight md:text-5xl">
+              One pipeline. Zero handoffs. Relentless output.
+            </h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {workflow.map((step, index) => (
+              <Card key={step.title} className="panel-soft border-border/70">
+                <CardContent className="p-6">
+                  <div className="mb-6 flex items-center justify-between">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary">
+                      <step.icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-muted-foreground">0{index + 1}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
         {/* Benefits Section */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
