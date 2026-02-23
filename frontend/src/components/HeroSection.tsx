@@ -1,80 +1,79 @@
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
-import heroImage from "@/assets/hero-bg.jpg";
+import { ArrowRight, Gauge, Orbit, Radar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const stats = [
+  {
+    label: "Autonomous agents",
+    value: "6",
+    icon: Orbit,
+  },
+  {
+    label: "Median run time",
+    value: "~2 min",
+    icon: Gauge,
+  },
+  {
+    label: "Insight coverage",
+    value: "Executive to chart-level",
+    icon: Radar,
+  },
+];
 
 const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      />
-      
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-hero" />
-      
-      <div className="relative container px-4 md:px-6 text-center z-10">
-        <div className="space-y-8 max-w-4xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-            <Sparkles className="h-4 w-4" />
-            AI-Powered Data Analysis
+    <section className="relative overflow-hidden pb-16 pt-20 md:pt-24">
+      <div className="container px-4 md:px-6">
+        <div className="mx-auto max-w-5xl text-center">
+          <div className="animate-enter-fade inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-primary">
+            Autonomous Data Operations
           </div>
-          
-          {/* Headline */}
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            Meet Your{" "}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">
-              Automated
-            </span>
-            <br />
-            Data Analyst Team
+
+          <h1 className="animate-enter-up mt-8 text-balance text-5xl font-semibold leading-[1.05] tracking-tight md:text-7xl">
+            Your Data Gets a
+            <span className="bg-gradient-primary bg-clip-text text-transparent"> World-Class AI Team</span>
+            , Instantly.
           </h1>
-          
-          {/* Subheadline */}
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Upload a CSV, and watch as AI agents analyze, visualize, and narrate 
-            insights from your data—automatically. No manual work required.
+
+          <p className="animate-enter-up-delay mx-auto mt-7 max-w-3xl text-balance text-lg leading-relaxed text-muted-foreground md:text-2xl">
+            Drop in a CSV and launch a coordinated analyst swarm that structures, audits, explains, and visualizes your
+            data into a board-ready report while you focus on decisions.
           </p>
-          
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              size="lg" 
-              className="text-lg px-8 py-6 bg-gradient-primary hover:shadow-glow transition-all duration-300 group"
+
+          <div className="animate-enter-up-delay-2 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Button
+              size="lg"
               onClick={() => navigate("/upload")}
+              className="group h-12 min-w-52 bg-gradient-primary text-base font-semibold text-primary-foreground shadow-glow transition-transform duration-300 hover:scale-[1.02]"
             >
-              Analyze My Data
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              Start Analysis
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Button>
-            
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="text-lg px-8 py-6"
+            <Button
+              size="lg"
+              variant="outline"
+              asChild
+              className="h-12 min-w-52 border-border/70 bg-card/70 text-base hover:bg-card"
             >
-              Watch Demo
+              <a href="#workflow">See Pipeline</a>
             </Button>
           </div>
-          
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">6</div>
-              <div className="text-sm text-muted-foreground">AI Agents</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">~2min</div>
-              <div className="text-sm text-muted-foreground">Analysis Time</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">100%</div>
-              <div className="text-sm text-muted-foreground">Automated</div>
-            </div>
+
+          <div className="mt-14 grid gap-4 md:grid-cols-3">
+            {stats.map((stat) => (
+              <article
+                key={stat.label}
+                className="panel-soft rounded-2xl border border-border/70 p-5 text-left animate-enter-fade"
+              >
+                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary">
+                  <stat.icon className="h-4 w-4" />
+                </div>
+                <p className="text-lg font-semibold text-foreground">{stat.value}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
+              </article>
+            ))}
           </div>
         </div>
       </div>
