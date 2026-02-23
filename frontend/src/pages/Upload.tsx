@@ -112,50 +112,51 @@ const Upload = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-border/40 bg-background/95 backdrop-blur">
-        <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="container flex h-20 items-center justify-between px-4 md:px-6">
           <Button 
             variant="ghost" 
             onClick={() => navigate("/")}
-            className="gap-2"
+            className="gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
           </Button>
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-sm font-semibold text-primary-foreground shadow-glow">
+              A
             </div>
-            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              AnalytIQ
-            </span>
+            <div className="hidden text-left sm:block">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Mission Console</p>
+              <p className="text-lg font-semibold tracking-tight">AnalytIQ</p>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container px-4 md:px-6 py-12">
+      <main className="container px-4 py-12 md:px-6 md:py-14">
         <div className="max-w-4xl mx-auto">
           {!isProcessing ? (
             <div className="text-center space-y-8">
               {/* Title */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-bold">
-                  Upload Your{" "}
+                <h1 className="text-balance text-4xl font-semibold tracking-tight md:text-6xl">
+                  Launch Your{" "}
                   <span className="bg-gradient-primary bg-clip-text text-transparent">
-                    CSV File
+                    Analysis Run
                   </span>
                 </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                  Upload your CSV file to begin the automated analysis. 
-                  Our AI team will handle the rest.
+                <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
+                  Upload one CSV and dispatch the full agent fleet for structured analysis, visual output, and
+                  narrative synthesis.
                 </p>
               </div>
 
               {/* Instructions */}
-              <Card className="border-0 bg-gradient-card shadow-card max-w-2xl mx-auto">
+              <Card className="panel-soft mx-auto max-w-2xl border-border/70">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-center justify-center">
                     <UploadIcon className="h-5 w-5" />
@@ -198,7 +199,7 @@ const Upload = () => {
                 size="lg"
                 onClick={handleSubmit}
                 disabled={!selectedFile || isProcessing}
-                className="text-lg px-8 py-6 bg-gradient-primary hover:shadow-glow transition-all duration-300"
+                className="h-12 bg-gradient-primary px-8 text-base font-semibold text-primary-foreground shadow-glow transition-transform duration-300 hover:scale-[1.02]"
               >
                 Start Analysis
               </Button>
@@ -206,7 +207,7 @@ const Upload = () => {
           ) : (
             <div className="space-y-8">
               <div className="text-center">
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <h1 className="mb-4 text-4xl font-semibold tracking-tight md:text-6xl">
                   Analyzing Your{" "}
                   <span className="bg-gradient-primary bg-clip-text text-transparent">
                     Data
