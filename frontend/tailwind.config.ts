@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -90,13 +91,53 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in-up': {
+					from: {
+						opacity: '0',
+						transform: 'translate3d(0, 14px, 0)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translate3d(0, 0, 0)'
+					}
+				},
+				'fade-in': {
+					from: {
+						opacity: '0'
+					},
+					to: {
+						opacity: '1'
+					}
+				},
+				'pulse-orb': {
+					'0%, 100%': {
+						opacity: '0.5',
+						transform: 'scale(0.98)'
+					},
+					'50%': {
+						opacity: '0.92',
+						transform: 'scale(1.04)'
+					}
+				},
+				'gradient-drift': {
+					'0%, 100%': {
+						backgroundPosition: '0% 50%'
+					},
+					'50%': {
+						backgroundPosition: '100% 50%'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-				'float': 'float 6s ease-in-out infinite'
+				'float': 'float 6s ease-in-out infinite',
+				'fade-in-up': 'fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both',
+				'fade-in': 'fade-in 0.65s ease-out both',
+				'pulse-orb': 'pulse-orb 8s ease-in-out infinite',
+				'gradient-drift': 'gradient-drift 14s ease infinite'
 			},
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
@@ -109,5 +150,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [tailwindcssAnimate],
 } satisfies Config;
