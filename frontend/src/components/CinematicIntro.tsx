@@ -1,302 +1,257 @@
-import React, { useRef, useMemo, useEffect, useState } from 'react';
+/**
+ * CinematicIntro.tsx
+ * "Clarity from Chaos" – 3-Act cinematic sequence
+ * Built with React Three Fiber + GSAP
+ * NO @react-three/postprocessing (crashes R3F v8 with applyProps)
+ * Bokeh simulated via multi-layer opacity/size rendering
+ */
+import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { EffectComposer, DepthOfField } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
-// ==========================================
-// Act Structure & State Management
-// ==========================================
+// ─── Constants ─────────────────────────────────────────────────────────────
+const PARTICLE_COUNT = 1200;
+const PARTICLE_COLOR = new THREE.Color('#FFFFFF');
+
 const ACTS = {
   VOID: 0,
   CONVERGENCE: 1,
   INSIGHT: 2,
-};
+} as const;
+type Act = (typeof ACTS)[keyof typeof ACTS];
 
-// ==========================================
-// Geometry & Particle Management
-// ==========================================
-const PARTICLE_COUNT = 1500;
+// ─── Generate Grid Positions (The Monument) ─────────────────────────────────
+function buildGridPositions(count: number) {
+  const side = Math.ceil(Math.cbrt(count));
+  const spacing = 0.22;
+  const positions: [number, number, number][] = [];
+  for (let i = 0; i < count; i++) {
+    const ix = (i % side) - side / 2;
+    const iy = (Math.floor(i / side) % side) - side / 2;
+    const iz = Math.floor(i / (side * side)) - side / 2;
+    positions.push([ix * spacing, iy * spacing, iz * spacing]);
+  }
+  return positions;
+}
 
-const ChoreographedSwarm = ({ currentAct, onActComplete }: { currentAct: number, onActComplete: () => void }) => {
+function buildVoidPositions(count: number) {
+  return Array.from({ length: count }, () => {
+    const r = 3.5 + Math.random() * 1.5;
+    const theta = Math.random() * 2 * Math.PI;
+    const phi = Math.acos(2 * Math.random() - 1);
+    return [
+      r * Math.sin(phi) * Math.cos(theta),
+      r * Math.sin(phi) * Math.sin(theta),
+      r * Math.cos(phi),
+    ] as [number, number, number];
+  });
+}
+
+// ─── Swarm Mesh ─────────────────────────────────────────────────────────────
+interface SwarmProps {
+  currentAct: Act;
+  onConvergenceComplete: () => void;
+}
+
+const Swarm: React.FC<SwarmProps> = ({ currentAct, onConvergenceComplete }) => {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const targetPositions = useRef<Float32Array>(new Float32Array(PARTICLE_COUNT * 3));
-  const time = useRef(0);
-  
-  // Base Geometry (Tiny Shards)
-  const geometry = useMemo(() => new THREE.IcosahedronGeometry(0.015, 0), []);
-  const material = useMemo(() => new THREE.MeshBasicMaterial({ color: '#FFFFFF', transparent: true, opacity: 0.4 }), []);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const clock = useRef(0);
+  const actRef = useRef<Act>(ACTS.VOID);
 
-  // Initial Void State (Chaos)
-  const [dummy] = useState(() => new THREE.Object3D());
-  const initialData = useMemo(() => {
-    const data = [];
+  // Particle "live" positions that GSAP interpolates
+  const livePos = useRef<Float32Array>(new Float32Array(PARTICLE_COUNT * 3));
+
+  const voidPos = useMemo(() => buildVoidPositions(PARTICLE_COUNT), []);
+  const gridPos = useMemo(() => buildGridPositions(PARTICLE_COUNT), []);
+
+  // Noise offsets per particle for Act 1 drift
+  const noise = useMemo(() => Array.from({ length: PARTICLE_COUNT }, () => ({
+    speed: 0.3 + Math.random() * 0.4,
+    phase: Math.random() * Math.PI * 2,
+  })), []);
+
+  // Opacity that we manage imperatively
+  const material = useMemo(() => new THREE.MeshBasicMaterial({
+    color: PARTICLE_COLOR,
+    transparent: true,
+    opacity: 0.55,
+  }), []);
+
+  const geometry = useMemo(() => new THREE.IcosahedronGeometry(0.014, 0), []);
+
+  // Initialize positions
+  useEffect(() => {
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      // Act 1: Random Sphere Volume (Void)
-      const r = 4 * Math.cbrt(Math.random());
-      const theta = Math.random() * 2 * Math.PI;
-      const phi = Math.acos(2 * Math.random() - 1);
-      
-      const x = r * Math.sin(phi) * Math.cos(theta);
-      const y = r * Math.sin(phi) * Math.sin(theta);
-      const z = r * Math.cos(phi);
+      const [x, y, z] = voidPos[i];
+      livePos.current[i * 3] = x;
+      livePos.current[i * 3 + 1] = y;
+      livePos.current[i * 3 + 2] = z;
 
-      // Act 3: The Structured Grid/Monument (Target)
-      // Arrange into a sharp, geometric block (10x15x10 grid approximation)
-      const side = Math.ceil(Math.cbrt(PARTICLE_COUNT));
-      const spacing = 0.15;
-      const gx = ((i % side) - side/2) * spacing;
-      const gy = (Math.floor((i / side) % side) - side/2) * spacing;
-      const gz = (Math.floor(i / (side * side)) - side/2) * spacing;
-
-      data.push({
-        x, y, z, // Void pos
-        tx: gx, ty: gy, tz: gz, // Target Matrix pos
-        speed: Math.random() * 0.5 + 0.1,
-        axis: new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize(),
-        progress: 0 // GSAP will animate this
-      });
-      targetPositions.current[i*3] = x;
-      targetPositions.current[i*3+1] = y;
-      targetPositions.current[i*3+2] = z;
-    }
-    return data;
-  }, []);
-
-  // Set initial instance matrices
-  useEffect(() => {
-    if (!meshRef.current) return;
-    initialData.forEach((d, i) => {
-      dummy.position.set(d.x, d.y, d.z);
-      dummy.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
+      dummy.position.set(x, y, z);
+      dummy.scale.setScalar(1);
       dummy.updateMatrix();
-      meshRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-    meshRef.current.instanceMatrix.needsUpdate = true;
-  }, [dummy, initialData]);
+      meshRef.current?.setMatrixAt(i, dummy.matrix);
+    }
+    if (meshRef.current) meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [dummy, voidPos]);
 
-  // Choreography Core
+  // Act transitions
   useEffect(() => {
+    actRef.current = currentAct;
+
     if (currentAct === ACTS.CONVERGENCE) {
-      // Act 2: Convergence (Snap fragments to grid)
-      // GSAP aggressively interpolates progress from 0 -> 1
-      initialData.forEach((d, i) => {
-        gsap.to(d, {
-          progress: 1,
-          duration: 3 + Math.random() * 1.5, // Sweep effect
-          ease: "power4.inOut",
+      // Stagger particles to grid using Power4.inOut
+      let maxDuration = 0;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const delay = (i / PARTICLE_COUNT) * 1.8; // sweep effect
+        const duration = 2.2 + Math.random() * 0.8;
+        maxDuration = Math.max(maxDuration, delay + duration);
+        const [tx, ty, tz] = gridPos[i];
+        const proxy = { x: livePos.current[i * 3], y: livePos.current[i * 3 + 1], z: livePos.current[i * 3 + 2] };
+        gsap.to(proxy, {
+          x: tx, y: ty, z: tz,
+          duration,
+          delay,
+          ease: 'power4.inOut',
           onUpdate: () => {
-            // Interpolate position based on progress
-            targetPositions.current[i*3] = THREE.MathUtils.lerp(d.x, d.tx, d.progress);
-            targetPositions.current[i*3+1] = THREE.MathUtils.lerp(d.y, d.ty, d.progress);
-            targetPositions.current[i*3+2] = THREE.MathUtils.lerp(d.z, d.tz, d.progress);
+            livePos.current[i * 3] = proxy.x;
+            livePos.current[i * 3 + 1] = proxy.y;
+            livePos.current[i * 3 + 2] = proxy.z;
           }
         });
-      });
+      }
+      // Opacity surge during convergence
+      gsap.to(material, { opacity: 0.9, duration: 2.5, delay: 0.5, ease: 'power2.inOut' });
 
-      // Signal completion after longest animation
-      setTimeout(() => {
-        onActComplete();
-      }, 4500);
+      setTimeout(onConvergenceComplete, (maxDuration + 0.3) * 1000);
     }
-    
+
     if (currentAct === ACTS.INSIGHT) {
-      // Act 3: Insight (Structure formed, ripple sent)
-      // Material flash hack via opacity bump
+      // Ripple flash
       gsap.to(material, {
-        opacity: 0.9,
-        duration: 0.2,
+        opacity: 1,
+        duration: 0.15,
         yoyo: true,
         repeat: 1,
-        ease: "expo.out"
+        ease: 'expo.out',
       });
+      // Then settle to a bright steady
+      gsap.to(material, { opacity: 0.9, duration: 0.8, delay: 0.4, ease: 'expo.out' });
     }
-  }, [currentAct, initialData, material, onActComplete]);
+  }, [currentAct, gridPos, material, onConvergenceComplete]);
 
-  // Frame Loop
-  useFrame((state, delta) => {
+  // Frame loop
+  useFrame((_, delta) => {
     if (!meshRef.current) return;
-    time.current += delta;
+    clock.current += delta;
+    const t = clock.current;
+    const act = actRef.current;
 
-    initialData.forEach((d, i) => {
-      // Read target positions (either void static, or interpolating to grid)
-      const px = targetPositions.current[i*3];
-      const py = targetPositions.current[i*3+1];
-      const pz = targetPositions.current[i*3+2];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const px = livePos.current[i * 3];
+      const py = livePos.current[i * 3 + 1];
+      const pz = livePos.current[i * 3 + 2];
 
-      if (currentAct === ACTS.VOID) {
-        // Act 1: Subtle floating drift
+      if (act === ACTS.VOID) {
+        const { speed, phase } = noise[i];
         dummy.position.set(
-          px + Math.sin(time.current * d.speed + i) * 0.1,
-          py + Math.cos(time.current * d.speed * 0.8 + i) * 0.1,
-          pz + Math.sin(time.current * 0.5) * 0.05
+          px + Math.sin(t * speed + phase) * 0.12,
+          py + Math.cos(t * speed * 0.9 + phase) * 0.10,
+          pz + Math.sin(t * 0.4 + phase) * 0.06
         );
-        dummy.rotation.x += 0.005;
-        dummy.rotation.y += 0.005;
-      } else if (currentAct === ACTS.CONVERGENCE) {
-        // Act 2: Snapping into place (driven by GSAP lerping targetPositions)
-        dummy.position.set(px, py, pz);
-        // Align rotation aggressively
-        dummy.quaternion.slerp(new THREE.Quaternion(), d.progress * 0.1); 
+        dummy.scale.setScalar(0.8 + Math.sin(t * speed + phase) * 0.2);
       } else {
-        // Act 3: Locked Monument (Zero drift)
         dummy.position.set(px, py, pz);
-        dummy.rotation.set(0,0,0);
+        dummy.scale.setScalar(1);
       }
 
       dummy.updateMatrix();
-      meshRef.current!.setMatrixAt(i, dummy.matrix);
-    });
-
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    }
     meshRef.current.instanceMatrix.needsUpdate = true;
-    
-    // Group Rotation (Orbital effect)
-    if (currentAct === ACTS.VOID) {
-       meshRef.current.rotation.y = time.current * 0.02; // Very slow drift
-    } else if (currentAct === ACTS.CONVERGENCE) {
-       // Spin up during convergence
-       meshRef.current.rotation.y += 0.04;
-       meshRef.current.rotation.x += 0.01;
+
+    // Group rotation
+    if (act === ACTS.VOID) {
+      meshRef.current.rotation.y = t * 0.018;
+      meshRef.current.rotation.x = Math.sin(t * 0.007) * 0.15;
+    } else if (act === ACTS.CONVERGENCE) {
+      meshRef.current.rotation.y += 0.035 * delta * 60;
+      meshRef.current.rotation.x += 0.008 * delta * 60;
     } else {
-       // Sharp halt onInsight, perfectly aligned
-       gsap.to(meshRef.current.rotation, {
-         x: Math.PI / 8, 
-         y: Math.PI / 4, 
-         z: 0, 
-         duration: 1, 
-         ease: "expo.out" 
-       });
+      // Smooth halt via lerp
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, Math.PI / 6, 0.04);
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, Math.PI / 12, 0.04);
     }
   });
 
-  return (
-    <instancedMesh ref={meshRef} args={[geometry, material, PARTICLE_COUNT]} frustumCulled={false} />
-  );
+  return <instancedMesh ref={meshRef} args={[geometry, material, PARTICLE_COUNT]} frustumCulled={false} />;
 };
 
-// ==========================================
-// Camera & PostProcessing Rig
-// ==========================================
-const CameraRig = ({ currentAct }: { currentAct: number }) => {
+// ─── Camera Rig ─────────────────────────────────────────────────────────────
+interface CameraRigProps {
+  currentAct: Act;
+}
+
+const CameraRig: React.FC<CameraRigProps> = ({ currentAct }) => {
   const { camera } = useThree();
-  const dofRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!dofRef.current) return;
-    
     if (currentAct === ACTS.VOID) {
-      // Act 1: Macro Dolly-in, Heavy Bokeh
-      camera.position.set(0, 0, 8);
-      dofRef.current.focusDistance = 0.05;
-      dofRef.current.focalLength = 0.1;
-      dofRef.current.bokehScale = 12;
-
-      // Slow dolly in
-      gsap.to(camera.position, {
-        z: 6,
-        duration: 12, // Let it drift 
-        ease: "none"
-      });
-    } 
-    else if (currentAct === ACTS.CONVERGENCE) {
-      // Act 2: Orbital Track & Rack focus
+      camera.position.set(0, 0, 9);
+      gsap.to(camera.position, { z: 6.5, duration: 14, ease: 'none' });
+    } else if (currentAct === ACTS.CONVERGENCE) {
       gsap.killTweensOf(camera.position);
-      
-      // Pull focus sharply to center
-      gsap.to(dofRef.current, {
-        focusDistance: 0.1, // Center
-        focalLength: 0.05,
-        bokehScale: 2,
-        duration: 3,
-        ease: "power2.inOut"
-      });
-
-      // Pushing in while group spins creates orbital feel
-      gsap.to(camera.position, {
-        x: 2,
-        y: 1,
-        z: 4,
-        duration: 4,
-        ease: "power4.inOut"
-      });
-    }
-    else if (currentAct === ACTS.INSIGHT) {
-      // Act 3: Snap Zoom & Infinite DoF
+      gsap.to(camera.position, { x: 2.5, y: 1.2, z: 5, duration: 4.5, ease: 'power4.inOut' });
+    } else if (currentAct === ACTS.INSIGHT) {
       gsap.killTweensOf(camera.position);
-      
-      // Infinite DoF (Remove Bokeh)
-      gsap.to(dofRef.current, {
-        bokehScale: 0,
-        duration: 0.5,
-        ease: "expo.out"
-      });
-
-      // Hard Snap Zoom millimeters away
-      gsap.to(camera.position, {
-        x: 0,
-        y: 0,
-        z: 2.2, // Extremely tight
-        duration: 1.2,
-        ease: "expo.out"
-      });
-      
-      // Look dead center perfectly aligned
-      gsap.to(camera.rotation, {
-        x: 0, y: 0, z: 0,
-        duration: 0.5,
-        ease: "expo.out"
-      });
+      // Snap zoom — hard and precise
+      gsap.to(camera.position, { x: 0, y: 0, z: 2.5, duration: 1.1, ease: 'expo.out' });
     }
   }, [currentAct, camera]);
 
-  return (
-    <EffectComposer>
-      <DepthOfField 
-        ref={dofRef} 
-        focusDistance={0.05} 
-        focalLength={0.1} 
-        bokehScale={12} 
-        height={480} 
-      />
-    </EffectComposer>
-  );
+  useFrame(() => {
+    if (currentAct !== ACTS.INSIGHT) {
+      camera.lookAt(0, 0, 0);
+    } else {
+      camera.lookAt(0, 0, 0);
+    }
+  });
+
+  return null;
 };
 
-// ==========================================
-// Main Orchestrator Component
-// ==========================================
-export default function CinematicIntro({ onSequenceComplete }: { onSequenceComplete: () => void }) {
-  const [currentAct, setCurrentAct] = useState(ACTS.VOID);
+// ─── Main Component ─────────────────────────────────────────────────────────
+interface CinematicIntroProps {
+  onSequenceComplete: () => void;
+}
+
+export default function CinematicIntro({ onSequenceComplete }: CinematicIntroProps) {
+  const [currentAct, setCurrentAct] = useState<Act>(ACTS.VOID);
+
+  const handleConvergenceComplete = useCallback(() => {
+    setCurrentAct(ACTS.INSIGHT);
+    // Signal HeroSection text to appear shortly after the snap-zoom lands
+    setTimeout(onSequenceComplete, 400);
+  }, [onSequenceComplete]);
 
   useEffect(() => {
-    // Orchestrate timeline
-    // Act 1 (Void) starts immediately
-    
-    // Trigger Act 2 (Convergence) after ambient void phase
-    const t1 = setTimeout(() => {
-      setCurrentAct(ACTS.CONVERGENCE);
-    }, 2500);
-
-    return () => {
-      clearTimeout(t1);
-    };
+    // Begin Act 2 after void ambient phase
+    const t = setTimeout(() => setCurrentAct(ACTS.CONVERGENCE), 2800);
+    return () => clearTimeout(t);
   }, []);
 
-  const handleConvergenceComplete = () => {
-    // When Grid snaps together, enter Act 3
-    setCurrentAct(ACTS.INSIGHT);
-    
-    // Signal UI to trigger Framer Motion text reveals
-    setTimeout(() => {
-      onSequenceComplete();
-    }, 200); // Tiny delay for impact
-  };
-
   return (
-    <div className="absolute inset-0 -z-10 h-full w-full overflow-hidden pointer-events-none bg-[#2B2B2B]">
-      <Canvas dpr={[1, 2]}>
+    <div className="absolute inset-0 -z-10 h-full w-full overflow-hidden pointer-events-none"
+      style={{ background: '#2B2B2B' }}>
+      <Canvas
+        camera={{ fov: 60, near: 0.1, far: 100 }}
+        gl={{ antialias: true, alpha: false }}
+        dpr={Math.min(window.devicePixelRatio, 2)}
+      >
         <CameraRig currentAct={currentAct} />
-        <ChoreographedSwarm currentAct={currentAct} onActComplete={handleConvergenceComplete} />
+        <Swarm currentAct={currentAct} onConvergenceComplete={handleConvergenceComplete} />
       </Canvas>
     </div>
   );
