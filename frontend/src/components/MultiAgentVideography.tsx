@@ -5,13 +5,13 @@ export default function MultiAgentVideography({ onComplete }: { onComplete: () =
   const [scene, setScene] = useState<0 | 1 | 2 | 3>(0);
 
   useEffect(() => {
-    // Extended pacing by ~1.5s overall
-    const s1 = setTimeout(() => setScene(1), 3200); // The Purge triggers (gives time to read Scene 1)
-    const s2 = setTimeout(() => setScene(2), 4600); // The Agents assemble
-    const s3 = setTimeout(() => setScene(3), 6600); // The Reveal
+    // Extended pacing by an additional 7s as requested
+    const s1 = setTimeout(() => setScene(1), 5200); // The Purge triggers (Hold Oldies + 2s)
+    const s2 = setTimeout(() => setScene(2), 7600); // The Agents assemble (+ 2s)
+    const s3 = setTimeout(() => setScene(3), 10600); // The Reveal (+ 2.5s)
     const s4 = setTimeout(() => {
       onComplete();
-    }, 9500); // Transition out to Hero (slower hold on the lock text)
+    }, 16500); // Transition out to Hero (Hold Reveal + 2.5s)
 
     return () => {
       clearTimeout(s1);
