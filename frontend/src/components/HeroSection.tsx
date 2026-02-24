@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Gauge, Orbit, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, Variants } from "framer-motion";
-import DataNodeNetwork from "./DataNodeNetwork";
+import { useState } from "react";
+import CinematicIntro from "./CinematicIntro";
 
 const stats = [
   {
@@ -24,7 +25,10 @@ const stats = [
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const [sequenceComplete, setSequenceComplete] = useState(false);
 
+  // Act 3: The Insight Typography Track-in
+  // Triggered only when sequenceComplete is true.
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
@@ -37,42 +41,45 @@ const HeroSection = () => {
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, z: -100, y: 10 },
     show: {
       opacity: 1,
+      z: 0,
       y: 0,
       transition: {
-        type: "spring",
-        stiffness: 80,
-        damping: 15,
+        type: "tween",
+        ease: "circOut", // Expo.easeOut equivalent for CSS
+        duration: 0.8
       },
     },
   };
 
   return (
-    <section className="relative overflow-hidden pb-16 pt-20 md:pt-32 min-h-[90vh] flex items-center">
-      <DataNodeNetwork />
+    <section className="relative overflow-hidden pb-16 pt-20 md:pt-32 min-h-[100vh] flex items-center">
+      <CinematicIntro onSequenceComplete={() => setSequenceComplete(true)} />
       
-      <div className="container px-4 md:px-6 relative z-10">
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="mx-auto max-w-5xl text-center"
-        >
-          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
-            A Soothing Experience
-          </motion.div>
+      <div className="container px-4 md:px-6 relative z-10 pointer-events-none">
+        
+        {sequenceComplete && (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="mx-auto max-w-5xl text-center pointer-events-auto"
+          >
+            <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-[0.25rem] border border-border bg-card px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
+              A Soothing Experience
+            </motion.div>
 
-          <motion.h1 variants={itemVariants} className="bricolage mt-8 text-balance text-6xl font-semibold leading-[1.05] tracking-tight text-foreground md:text-7xl lg:text-8xl">
-            Focus on Decisions.<br/>
-            Let the Data Flow.
-          </motion.h1>
+            <motion.h1 variants={itemVariants} style={{ perspective: '1000px' }} className="bricolage mt-8 text-balance text-6xl font-semibold leading-[1.05] tracking-tight text-foreground md:text-7xl lg:text-8xl">
+              Focus on Decisions.<br/>
+              Let the Data Flow.
+            </motion.h1>
 
-          <motion.p variants={itemVariants} className="mx-auto mt-7 max-w-3xl text-balance text-xl leading-relaxed text-muted-foreground font-medium">
-            Drop in a CSV and launch an automated analyst swarm that structures, audits, explains, and visualizes your
-            data into a board-ready report instantly.
-          </motion.p>
+            <motion.p variants={itemVariants} className="mx-auto mt-7 max-w-3xl text-balance text-xl leading-relaxed text-muted-foreground font-medium">
+              Drop in a CSV and launch an automated analyst swarm that structures, audits, explains, and visualizes your
+              data into a board-ready report instantly.
+            </motion.p>
 
           <motion.div variants={itemVariants} className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -97,22 +104,23 @@ const HeroSection = () => {
             </motion.div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="mt-24 grid gap-8 md:grid-cols-3">
-            {stats.map((stat, i) => (
-              <motion.article
-                key={stat.label}
-                whileHover={{ y: -5, transition: { type: "spring", stiffness: 300, damping: 20 } }}
-                className="rounded-[0.5rem] border border-border p-8 text-left bg-card hover:border-muted-foreground transition-colors shadow-none"
-              >
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-[0.5rem] bg-secondary text-foreground">
-                  <stat.icon className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <p className="bricolage text-3xl font-semibold text-foreground tracking-tight">{stat.value}</p>
-                <p className="mt-2 text-base font-medium text-muted-foreground">{stat.label}</p>
-              </motion.article>
-            ))}
+            <motion.div variants={itemVariants} className="mt-24 grid gap-8 md:grid-cols-3">
+              {stats.map((stat, i) => (
+                <motion.article
+                  key={stat.label}
+                  whileHover={{ y: -5, transition: { type: "tween", ease: "easeOut", duration: 0.2 } }}
+                  className="rounded-[0.5rem] border border-border p-8 text-left bg-card hover:border-muted-foreground transition-colors shadow-none"
+                >
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-[0.5rem] bg-background text-foreground border border-border">
+                    <stat.icon className="h-6 w-6 text-foreground" />
+                  </div>
+                  <p className="bricolage text-3xl font-semibold text-foreground tracking-tight">{stat.value}</p>
+                  <p className="mt-2 text-base font-medium text-muted-foreground">{stat.label}</p>
+                </motion.article>
+              ))}
+            </motion.div>
           </motion.div>
-        </motion.div>
+        )}
       </div>
     </section>
   );
