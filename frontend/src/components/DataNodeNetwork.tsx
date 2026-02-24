@@ -51,12 +51,12 @@ const ParticleSwarm = () => {
     <Points ref={pointsRef} positions={positions} stride={3} frustumCulled={false}>
       <PointMaterial
         transparent
-        color="#2B2B2B" // Strict primary text/CTA constraint
-        size={0.018} // Slightly smaller for minimalist feel
+        color="#FFFFFF" // Inverted to white for dark background
+        size={0.018}
         sizeAttenuation={true}
         depthWrite={false}
-        opacity={0.3} // Very subtle and soothing
-        blending={THREE.NormalBlending} // Remove additive blending on white bg
+        opacity={0.15} // Even more subtle against dark bg
+        blending={THREE.AdditiveBlending} // Additive works beautifully on dark backgrounds
       />
     </Points>
   );

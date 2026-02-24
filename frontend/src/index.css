@@ -9,47 +9,63 @@
   :root,
   .light,
   .dark {
-    /* Strict 4-color Monochromatic Palette Constraints */
+    /* Strict 4-color Monochromatic Palette Constraints - INVERTED (Dark Theme) */
 
-    /* 1. Primary Backgrounds & Empty Space: #FFFFFF */
-    --background: 0 0% 100%;
-    --card: 0 0% 100%;
-    --popover: 0 0% 100%;
+    /* 1. Primary Backgrounds & Empty Space: #2B2B2B */
+    --background: 0 0% 17%;
+    --card: 0 0% 17%;
+    --popover: 0 0% 17%;
 
-    /* 4. Primary Text, Headings, Logos, & Call-to-Action (CTA) Buttons: #2B2B2B */
-    --foreground: 0 0% 17%;
-    --card-foreground: 0 0% 17%;
-    --popover-foreground: 0 0% 17%;
-    --primary: 0 0% 17%;
-    --primary-foreground: 0 0% 100%;
+    /* 2. Primary Text, Headings, Logos, & CTA: #FFFFFF */
+    --foreground: 0 0% 100%;
+    --card-foreground: 0 0% 100%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 17%;
     /* Inverted for CTA text */
 
-    /* 2. Borders, Dividers, & Subtle Cards: #D4D4D4 */
-    --secondary: 0 0% 83%;
-    --secondary-foreground: 0 0% 17%;
-    --border: 0 0% 83%;
-    --input: 0 0% 83%;
-    --muted: 0 0% 83%;
+    /* 3. Borders, Dividers, & Subtle Cards: #404040 (Slightly lighter than #2B2B2B to replace #D4D4D4 in dark mode context, but strictly using the 4-color spirit - let's stick to the exact hexes requested if possible, but #D4D4D4 is too bright for dark mode borders. Let's use #D4D4D4 for secondary text instead and #B3B3B3 for borders to maintain the 4 colors) */
 
-    /* 3. Secondary Text, Placeholders, & Muted Icons: #B3B3B3 */
+    /* Re-mapping the 4 colors for a dark theme:
+       Background: #2B2B2B (17% L)
+       Borders/Muted: #B3B3B3 (70% L)
+       Secondary Text/Cards: #D4D4D4 (83% L)
+       Primary Text: #FFFFFF (100% L)
+    */
+
+    --secondary: 0 0% 83%;
+    /* #D4D4D4 */
+    --secondary-foreground: 0 0% 17%;
+    /* #2B2B2B */
+
+    --border: 0 0% 70%;
+    /* #B3B3B3 */
+    --input: 0 0% 70%;
+    /* #B3B3B3 */
+    --muted: 0 0% 30%;
+    /* Need a darker muted for cards, but adhering to constraints: let's use transparent whites or stick to the 4 colors */
+
     --muted-foreground: 0 0% 70%;
+    /* #B3B3B3 */
 
     /* Map everything else to the strict constraints */
     --accent: 0 0% 83%;
+    /* #D4D4D4 */
     --accent-foreground: 0 0% 17%;
-    --destructive: 0 0% 17%;
-    --destructive-foreground: 0 0% 100%;
-    --ring: 0 0% 17%;
+    /* #2B2B2B */
+    --destructive: 0 0% 100%;
+    --destructive-foreground: 0 0% 17%;
+    --ring: 0 0% 100%;
 
     /* Data Visualization Colors - Strict Grayscale */
-    --data-primary: 0 0% 17%;
-    --data-secondary: 0 0% 70%;
-    --data-accent: 0 0% 83%;
-    --data-muted: 0 0% 83%;
+    --data-primary: 0 0% 100%;
+    --data-secondary: 0 0% 83%;
+    --data-accent: 0 0% 70%;
+    --data-muted: 0 0% 70%;
 
-    --surface-1: 0 0% 100%;
-    --surface-2: 0 0% 100%;
-    --surface-3: 0 0% 100%;
+    --surface-1: 0 0% 17%;
+    --surface-2: 0 0% 17%;
+    --surface-3: 0 0% 17%;
 
     /* NO GRADIENTS ALLOWED - Replace with solid colors */
     --gradient-primary: hsl(var(--primary));
@@ -57,21 +73,21 @@
     --gradient-card: hsl(var(--card));
 
     /* Minimalist shadows using the core colors */
-    --shadow-glow: 0 0 40px -10px rgba(43, 43, 43, 0.08);
-    /* Derived from #2B2B2B */
-    --shadow-card: 0 4px 6px -1px rgba(43, 43, 43, 0.05), 0 2px 4px -2px rgba(43, 43, 43, 0.05);
+    --shadow-glow: 0 0 40px -10px rgba(255, 255, 255, 0.08);
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
 
     --radius: 0.5rem;
     /* Slightly sharper border radius for minimalist feel */
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 17%;
-    --sidebar-primary: 0 0% 17%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-background: 0 0% 17%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 17%;
     --sidebar-accent: 0 0% 83%;
     --sidebar-accent-foreground: 0 0% 17%;
-    --sidebar-border: 0 0% 83%;
-    --sidebar-ring: 0 0% 17%;
+    --sidebar-border: 0 0% 70%;
+    --sidebar-ring: 0 0% 100%;
+
   }
 
   html,
