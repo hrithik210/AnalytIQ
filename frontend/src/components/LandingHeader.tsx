@@ -55,8 +55,7 @@ const LandingHeader = () => {
             A
           </div>
           <div className="space-y-0.5">
-            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Mission Console</p>
-            <p className="text-xl font-semibold tracking-tight text-foreground">AnalytIQ</p>
+            <img src="/analytiq_logo.png" alt="AnalytIQ" width={100} height={100} />
           </div>
         </button>
 
