@@ -5,13 +5,13 @@ export default function MultiAgentVideography({ onComplete }: { onComplete: () =
   const [scene, setScene] = useState<0 | 1 | 2 | 3>(0);
 
   useEffect(() => {
-    // Exact user requested pacing: Scene1: 3s, Scene2: 7s, Scene3: 7s
-    const s1 = setTimeout(() => setScene(1), 3000);   // Scene 1 holds for 3s, then Purge
-    const s2 = setTimeout(() => setScene(2), 10000);  // Scene 2 (Agents) triggers 7s after S1
-    const s3 = setTimeout(() => setScene(3), 17000);  // Scene 3 (Reveal) triggers 7s after S2
+    // Exact user requested pacing: Scene1: 3s, Scene2: 5s, Scene3: 5s, Fast wipe
+    const s1 = setTimeout(() => setScene(1), 3000);   // Scene 1 holds for 3s, then Purge starts
+    const s2 = setTimeout(() => setScene(2), 4000);   // Fast 1s wipe line, then Scene 2 (Agents) starts
+    const s3 = setTimeout(() => setScene(3), 9000);   // Scene 2 holds for 5s, then Scene 3 (Reveal) starts
     const s4 = setTimeout(() => {
       onComplete();
-    }, 22000); // Transition out 5s after the final reveal text
+    }, 14000); // Scene 3 holds for 5s, then transitions out to Hero
 
     return () => {
       clearTimeout(s1);
