@@ -3,7 +3,7 @@ import { ArrowRight, Gauge, Orbit, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, Variants } from "framer-motion";
 import { useState } from "react";
-import CinematicIntro from "./CinematicIntro";
+import MultiAgentVideography from "./MultiAgentVideography";
 
 const stats = [
   {
@@ -25,10 +25,10 @@ const stats = [
 
 const HeroSection = () => {
   const navigate = useNavigate();
-  const [sequenceComplete, setSequenceComplete] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
 
-  // Act 3: The Insight Typography Track-in
-  // Triggered only when sequenceComplete is true.
+  // Main Hero Typography Track-in
+  // Triggered only when introComplete is true.
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
@@ -41,14 +41,13 @@ const HeroSection = () => {
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, z: -100, y: 10 },
+    hidden: { opacity: 0, y: 20 },
     show: {
       opacity: 1,
-      z: 0,
       y: 0,
       transition: {
         type: "tween",
-        ease: "circOut", // Expo.easeOut equivalent for CSS
+        ease: "circOut",
         duration: 0.8
       },
     },
