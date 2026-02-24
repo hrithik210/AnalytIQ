@@ -34,14 +34,15 @@ const ParticleSwarm = () => {
   useFrame((state) => {
     if (!pointsRef.current) return;
     const time = state.clock.getElapsedTime();
-    pointsRef.current.rotation.y = time * 0.05;
-    pointsRef.current.rotation.x = time * 0.03;
+    // Soothing, slow rotation
+    pointsRef.current.rotation.y = time * 0.02;
+    pointsRef.current.rotation.x = time * 0.01;
     
     // Add subtle waving motion
     const positions = pointsRef.current.geometry.attributes.position.array as Float32Array;
     for (let i = 0; i < positions.length; i += 3) {
       const speed = floatSpeeds[i / 3];
-      positions[i + 1] += Math.sin(time + speed * 100) * 0.002;
+      positions[i + 1] += Math.sin(time * 0.5 + speed * 100) * 0.001;
     }
     pointsRef.current.geometry.attributes.position.needsUpdate = true;
   });
@@ -50,12 +51,12 @@ const ParticleSwarm = () => {
     <Points ref={pointsRef} positions={positions} stride={3} frustumCulled={false}>
       <PointMaterial
         transparent
-        color="#3b82f6" // Matched to new primary electric blue
-        size={0.025}
+        color="#2B2B2B" // Strict primary text/CTA constraint
+        size={0.018} // Slightly smaller for minimalist feel
         sizeAttenuation={true}
         depthWrite={false}
-        opacity={0.6}
-        blending={THREE.AdditiveBlending}
+        opacity={0.3} // Very subtle and soothing
+        blending={THREE.NormalBlending} // Remove additive blending on white bg
       />
     </Points>
   );
@@ -63,9 +64,8 @@ const ParticleSwarm = () => {
 
 export default function DataNodeNetwork() {
   return (
-    <div className="absolute inset-0 -z-10 h-[100%] w-full overflow-hidden opacity-40 mix-blend-screen md:opacity-60 pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/40 to-background/95 z-10" />
-      <Canvas camera={{ position: [0, 0, 4], fov: 60 }} dpr={[1, 2]}>
+    <div className="absolute inset-0 -z-10 h-[100%] w-full overflow-hidden pointer-events-none bg-background">
+      <Canvas camera={{ position: [0, 0, 4.5], fov: 60 }} dpr={[1, 2]}>
         <ParticleSwarm />
       </Canvas>
     </div>

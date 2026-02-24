@@ -60,56 +60,55 @@ const HeroSection = () => {
           animate="show"
           className="mx-auto max-w-5xl text-center"
         >
-          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-primary backdrop-blur-sm">
-            Autonomous Data Operations
+          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
+            A Soothing Experience
           </motion.div>
 
-          <motion.h1 variants={itemVariants} className="bricolage mt-8 text-balance text-5xl font-bold leading-[1.05] tracking-tight md:text-7xl lg:text-8xl">
-            Your Data Gets a<br/>
-            <span className="bg-gradient-primary bg-clip-text text-transparent italic">World-Class AI Team</span>
-            <br/>Instantly.
+          <motion.h1 variants={itemVariants} className="bricolage mt-8 text-balance text-6xl font-semibold leading-[1.05] tracking-tight text-foreground md:text-7xl lg:text-8xl">
+            Focus on Decisions.<br/>
+            Let the Data Flow.
           </motion.h1>
 
-          <motion.p variants={itemVariants} className="mx-auto mt-7 max-w-3xl text-balance text-lg leading-relaxed text-muted-foreground md:text-2xl font-medium">
-            Drop in a CSV and launch a coordinated analyst swarm that structures, audits, explains, and visualizes your
-            data into a board-ready report while you focus on decisions.
+          <motion.p variants={itemVariants} className="mx-auto mt-7 max-w-3xl text-balance text-xl leading-relaxed text-muted-foreground font-medium">
+            Drop in a CSV and launch an automated analyst swarm that structures, audits, explains, and visualizes your
+            data into a board-ready report instantly.
           </motion.p>
 
           <motion.div variants={itemVariants} className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
                 size="lg"
                 onClick={() => navigate("/upload")}
-                className="group h-14 min-w-[220px] bg-gradient-primary text-lg font-semibold text-primary-foreground shadow-glow border-none"
+                className="group h-14 min-w-[220px] bg-foreground text-background text-lg font-semibold hover:bg-foreground/90 transition-colors shadow-none rounded-[0.5rem] border border-transparent"
               >
                 Start Analysis
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
                 size="lg"
                 variant="outline"
                 asChild
-                className="h-14 min-w-[220px] border-border/70 bg-card/40 backdrop-blur-md text-lg hover:bg-card/80 transition-colors"
+                className="h-14 min-w-[220px] border-border bg-background text-foreground text-lg font-semibold hover:bg-secondary transition-colors rounded-[0.5rem]"
               >
                 <a href="#workflow">See Pipeline</a>
               </Button>
             </motion.div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="mt-20 grid gap-6 md:grid-cols-3">
+          <motion.div variants={itemVariants} className="mt-24 grid gap-8 md:grid-cols-3">
             {stats.map((stat, i) => (
               <motion.article
                 key={stat.label}
                 whileHover={{ y: -5, transition: { type: "spring", stiffness: 300, damping: 20 } }}
-                className="panel-soft rounded-2xl border border-border/70 p-6 text-left backdrop-blur-sm bg-card/40 hover:bg-card/60 transition-colors"
+                className="rounded-[0.5rem] border border-border p-8 text-left bg-card hover:border-muted-foreground transition-colors shadow-none"
               >
-                <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl border border-primary/40 bg-primary/10 text-primary shadow-[0_0_15px_rgba(11,244,243,0.2)]">
-                  <stat.icon className="h-5 w-5" />
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-[0.5rem] bg-secondary text-foreground">
+                  <stat.icon className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="bricolage text-2xl font-bold text-foreground tracking-tight">{stat.value}</p>
-                <p className="mt-1.5 text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <p className="bricolage text-3xl font-semibold text-foreground tracking-tight">{stat.value}</p>
+                <p className="mt-2 text-base font-medium text-muted-foreground">{stat.label}</p>
               </motion.article>
             ))}
           </motion.div>
