@@ -51,12 +51,7 @@ const LandingHeader = () => {
           className="group flex items-center gap-3 text-left"
           aria-label="Go to homepage"
         >
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-primary text-lg font-semibold text-primary-foreground shadow-glow transition-transform duration-300 group-hover:scale-105">
-            A
-          </div>
-          <div className="space-y-0.5">
-            <img src="/analytiq_logo.png" alt="AnalytIQ" width={100} height={100} />
-          </div>
+          <img src="/analytiq_logo.png" alt="AnalytIQ" className="h-16 md:h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
         </button>
 
         <nav className="hidden items-center gap-7 lg:flex">
