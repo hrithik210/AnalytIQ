@@ -90,7 +90,7 @@ export default function MultiAgentVideography({ onComplete }: { onComplete: () =
             initial={{ height: "2px", width: 0, opacity: 1 }}
             animate={{ width: "100vw" }}
             exit={{ opacity: 0, transition: { duration: 0.1 } }}
-            transition={{ duration: 0.6, ease: "expoOut" }}
+            transition={{ duration: 0.6, ease: "circOut" }}
             className="absolute bg-[#FFFFFF] shadow-[0_0_40px_10px_rgba(255,255,255,0.2)]"
           />
         )}

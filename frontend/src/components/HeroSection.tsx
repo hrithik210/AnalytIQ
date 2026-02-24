@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Gauge, Orbit, Radar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion, Variants } from "framer-motion";
+import { motion, Variants, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import MultiAgentVideography from "./MultiAgentVideography";
 
@@ -55,11 +55,22 @@ const HeroSection = () => {
 
   return (
     <section className="relative overflow-hidden pb-16 pt-20 md:pt-32 min-h-[100vh] flex items-center">
-      <CinematicIntro onSequenceComplete={() => setSequenceComplete(true)} />
+      {/* Intro Videography Overlay */}
+      <AnimatePresence>
+        {!introComplete && (
+          <motion.div
+            exit={{ opacity: 0, scale: 1.1 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
+            className="absolute z-50 inset-0"
+          >
+            <MultiAgentVideography onComplete={() => setIntroComplete(true)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <div className="container px-4 md:px-6 relative z-10 pointer-events-none">
         
-        {sequenceComplete && (
+        {introComplete && (
           <motion.div 
             variants={containerVariants}
             initial="hidden"
